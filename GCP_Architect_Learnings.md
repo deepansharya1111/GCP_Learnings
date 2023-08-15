@@ -159,3 +159,79 @@ We can use INSTANCE GROUPS to manage scaling of our infrastructure.
 <img src="./images/milestone2.png" width="500"/>
 
 😃 Autoscaling is much better than manually managing instances <br/>😃 Everything depends on reliable automation<br/>
+</pre>
+
+<h2 align="center">6. Security - (Need to Re-Study to improve notes)</h2>
+
+<pre>
+Security means Ensuring proper data flow.
+Not too much; not too little.
+<br/>
+What is "proper" data flow? (CIA Triad)
+→ You cannot view data you shouldn't 
+(making sure that only the right people can see certain data is Confidentiality)
+→ You cannot change data you shouldn't 
+(Being able to trust that the data hasn't been changed inappropriately is Integrity)
+→ You can access data you should 
+(Being able to get at the data and use the system when you do need to is Availability)
+<br/>
+How do we control data flow? (AAA)
+・ Authentication: Who are you?
+・ Authorization: What are you allowed to do?
+・ Accounting: What did you?
+<br/>
+Key Security Products/Features:
+➟ AuthN (authentication)
+・ Identity - Humans in G Suite, Cloud Identity
+         - Applications & services use Service Accounts
+・ Identity hierarchy: Google Groups
+・ Can use Google Cloud Directory Sync (GCDS) to pull from LDAP (no push)
+<br/>
+➟ AuthZ (Authorization)
+・ Identity hierarchy (Google Groups)
+・ Resource hierarchy (Organization, Folders, Projects)
+・ Identity and Access Management (IAM): Permissions, Roles, Bindings
+・ GCS ACLs
+・ Billing management
+・ Networking structure & restrictions
+<br/>
+➟ AccT (Accounting)
+・ Audit Activity Logs (provided by Stackdriver)
+・ Billing export - To BigQuery
+             - To file (in GCS bucket): Can be JSON or CSV
+・ GCS Object Lifecycle Management
+<br/>------------------------------------------------
+⮕ IAM Resource Hierarchy [AuthZ]
+Organization (Tied to G Suite or Cloud Identity domain)<br/> ↆ <br/>Folder (Contains any number of Projects and Subfolders)<br/> ↆ <br/>Project (Container for a set of related resources)<br/> ↆ <br/>Resource (Something you create in GCP)
+<br/>
+⮕ Permissions: allows you to perform a certain action<br/>In the IAM world,
+-- Each permission follows the form ➟ Service.Resource.Verb
+-- for example: pubsub.subscriptions.consume. <br/>
+
+⮕ Role: is a collection of Permissions to use or manage GCP resources.<br/>
+-- Primitive Roles: Project-level and often too broad
+ ・ Viewer: read-only
+ ・ Editor: view and change things
+ ・ Owner: can also control access & billing
+-- Predefined Roles Give granular access to specific GCP resources
+ ・ E.g.: roles/bigquery.dataEditor, roles/pubsub.subscriber
+<br/>
+・Roles Overview: https://cloud.google.com/iam/docs/roles-overview <br/>⮕ Complete List of Roles & Permissions: https://cloud.google.com/iam/docs/understanding-roles#basic
+<br/>
+
+⮕Member: A Member is some Google-known identity identified by a unique email address
+
+-- user: Specific Google account (can be G Suite, Cloud Identity, Gmail, or any validated email)
+-- serviceAccount: used by apps/services (not by humans)
+-- group: is a named collection of Google accounts and service accounts. (giving developer access) 
+-- domain: for when you want to grant access to some resource to every single account in a particular domain.  That domain needs to be managed by G Suite or Cloud Identity
+-- allAuthenticatedUsers: Resource is Public but needs some Google account or service account. (The only difference is that you can tie actions back to some user account which is what makes this different)
+-- allUsers: Anyone on the Internet, no authentication needed, completely anonymous access is fine. (Public)
+- Group should be the default choice always
+- Use them for everything!
+- You can even use a group to be the owner of projects when you have an organization.
+- And to be able to manage the groups effectively in an organization, you can nest them. <br/>So for example you might want to have one group for each department and then have another group called all staff. This is good because every employee will be in some department so they'll always be included in the all staff group. And it's a lot less work to manage adding and removing employees this way than going and finding each and every one of the groups that they should be a part of.
+
+⮕ Policies
+Each resource can have exactly one policy attached to it.
+By default Resources generally have an empty policy attached to them.<br/>Now in that one policy per resource you can have a maximum of 1500 member bindings. It should never get to that number. Always use group.
