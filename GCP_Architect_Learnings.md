@@ -109,15 +109,15 @@ Or [x] Allow full access to all Cloud APIs. Which we will choose for this explor
 example: 339365196943-compute@developer.gserviceaccount.com deleted myvmname.
 
 ⮕ There is an option to Enable deletion protection, which is not always the best practice. <br/>
-Also, there is another checkbox, <br/>"[x]Delete boot disk when instance is deleted" which is ticked, <br/>because the default behavior is not to be preserving these instances, <br/>you start them up -> They do some stuff -> they go away. <br/>Going away shouldn't be a problem because the doing some stuff part should always be writing everything that matters somewhere else. <br/>
-Now to store things, we can add persistent disks, but that doesn't go well with auto-scaling, <br/>so you often want to use a separate service to store the data instead.<br/>
+Also, there is another checkbox, <br/>"[x]Delete boot disk when instance is deleted" which is ticked, <br/>because the default behavior is not to be preserving these instances, <br/>you start them up -> They do some stuff -> they go away. <br/>Going away should be fine because the doing some stuff part should always be writing everything that matters somewhere else. <br/>
+Now to store things, we can add persistent disks, but that doesn't go well with auto scaling, <br/>so you often want to use a separate service to store the data instead.<br/>
 
 ⮕ Now in the advanced settings section of compute settings:<br/>
 we also have a "Security" tab and here's where we could override the project level settings about SSH keys <br/>and block them from being used and add custom ones just for this instance.<br/>
 You might want to use this if you have special machines
 that shouldn't be available to most people in the project <br/>or some machines where you want to allow specific access to those machines and not the others.
 
-Now for the disks, remember that the default behavior is to delete the boot disk whenever the instance goes away <br/>though you could either add a new one or attach an existing persistent disk that you had created. <br/>
+Now for the disks, remember that the default behaviour is to delete the boot disk whenever the instance goes away <br/>though you could either add a new one or attach an existing persistent disk that you had created. <br/>
 For Key's encryption, It's generally easiest to let [x]Google manage the keys<br/>
 And if possible though, you should try to avoid [x]Customer-supplied key, i.e, having to manage the keys yourself outside of Google.
 
@@ -131,7 +131,7 @@ They have a new "expireOn:" tag at the end, so Google will automatically remove 
 → Service Accounts: https://cloud.google.com/compute/docs/access/service-accounts <br/>
 → VM instance lifecycle: https://cloud.google.com/compute/docs/instances/instance-life-cycle <br/>
 → About VM metadata: https://cloud.google.com/compute/docs/metadata/overview#waitforchange <br/>
-・Note: We cannot pull logs from instance, The instances are set up to push their logs to Google Cloud operations (formerly Stackdriver) through the agent. <br/>
+・Note: We cannot pull logs from instance, The instances are set up to push their logs to Google Cloud operations (formerly Stack-driver) through the agent. <br/>
 Note: Metadata service uses the http service, not https <br/>
 ・Tip: If a startup script for a newly created GCE instance did not run at all, to help investigate this problem, we can<br/>a)Press the SSH button on the instance Details page in the console. <br/>& b) Check the machine's syslog. <br/>
 Note: GCE console's monitoring tab has information that it can get from the hypervisor so we can see things like CPU usage <br/>but it cannot see error messages logged by the startup script.
@@ -140,25 +140,25 @@ Note: GCE console's monitoring tab has information that it can get from the hype
 
 The real world is not about following instructions that someone else gives you, <br/>The real world is about figuring out what needs to be done and doing it.<br/>
 
-<h2 align="center">5. Scaling</h2>
+<h2 align="center">5. Scaling / Auto-Scaling</h2>
 
 <pre>
-We can use INSTANCE GROUPS to manage scaling of our infrastructure.
-➟ Un-Managed Instance Group type <br/>require us to manually monitor the VM load then CREATE New VMs manually and add them to the group accordingly. <br/>
+We can use INSTANCE GROUPS to manage the scaling of our infrastructure.
+➟ Un-Managed Instance Group type <br/> requires us to manually monitor the VM load, then CREATE New VMs manually and add them to the group accordingly. <br/>
 ・We have to switch to "[x]Single zone" to be able to have an unmanaged instance group.<br/>
 ・We have to manually stop the instances when they are not being used. <br/>
 ・When deleting Un-Managed Instance Group, instances are not automatically deleted and need to be further deleted manually.<br/>
 
 ➟ Managed instance Groups are created by using INSTANCE TEMPLATES only.<br/>
-・We have to switch to "[x]Multiple zones" to be able to have an unmanaged instance group.<br/>
+・We have to switch to "[x]Multiple zones" to be able to have a managed instance group.<br/>
 ・It automatically scales and stops the instances as per the requirements and the set specifications. <br/>
 ・Deleting a managed instance group will delete all of its instances because it owns them.<br/>
-・In normal circumstances we want the cooldown period to be set longer than the total amount of<br/> time it takes to start up the instance and finish running its startup script.<br/>
-・Health Check: This is about making sure that the instances are healthy to do the work that they need to do. <br/>  If you imagine that you're running a program to pick up work packages but something went wrong with it and it crashed...<br/>  That won't necessarily shut down the machine but if you have a health check that is continually asking: Are you still alright? What about now? Everything Good? <br/>  Then if it doesn't get a positive response it can say all right there's something wrong with you, You need to be refreshed. <br/>  It'll delete the problematic machine and create a new one from template.
+・In normal circumstances, we want the cooldown period to be set longer than the total amount of<br/> time it takes to start up the instance and finish running its startup script.<br/>
+・Health Check: This is about ensuring that the instances are healthy enough to do the work they need to do. <br/>  If you imagine that you're running a program to pick up work packages, but something went wrong with it, and it crashed...<br/>  That won't necessarily shut down the machine, but if you have a health check that is continually asking: Are you still alright? What about now? Everything Good? <br/>  Then, if it doesn't get a positive response, it can say all right, there's something wrong with you, You need to be refreshed. <br/>  It'll delete the problematic machine and create a new one from template.
    
 <img src="./images/milestone2.png" width="500"/>
 
-😃 Autoscaling is much better than manually managing instances <br/>😃 Everything depends on reliable automation<br/>
+😃 Autoscaling is much better than manually managing instances <br/>😃 Everything depends on reliable automation<br/>😌 Load balancing is separate from auto-scaling. (See Section 7)
 </pre>
 
 <h2 align="center">6. Security - (Need to Re-Study to improve notes)</h2>
@@ -271,6 +271,19 @@ BILLING IAM ROLES ⬇
 
 </pre>
 
-<h2 align="center">7. Networking</h2>
+<h2 align="center">7. Networking = Routing</h2>
 
 <pre>
+Don't think in terms of connections and networks.
+Instead, think about how each piece of data makes its journey from place to place.
+・Routing is about deciding where data should go next.
+<img src="./images/google uses cold networking & not hot.png" width="700"/>
+Let's take a look at how data makes its way from the front door of Google's network to the correct resource in our system.
+
+Reasons to direct data flow to different resources:
+-- Latency reduction = Use servers physically close to clients. (You want your system to respond quickly to users. So it's good if your servers are physically close to them.)
+-- Load balancing = Let's say you have too many incoming requests to be handled by just one machine. So you add a second machine to help out, but there's no point in doing that if all of the incoming requests still go to the overloaded machine, right? That's why we need load balancing to divide the requests amongst the machines that can handle them. 
+--- (So Load balancing is Separate from auto-scaling to handle fluctuating workloads. Of course they do work well together. But it would be best to keep a mental model that has them related, not entirely overlapped.)
+-- System design = You might have different servers in your system handling different parts of that system. And this is especially true when your service is composed of micro services rather than all jammed together (in a monolith).
+--- (If you imagine something like an online store, you might have some systems that handle the item catalog, maybe other systems that know about the current inventory levels, and yet different systems that handle user data like past orders that they ve placed or maybe even what's in their cart right now.)
+-- 
