@@ -136,7 +136,8 @@ Note: Metadata service uses the http service, not https <br/>
 ・Tip: If a startup script for a newly created GCE instance did not run at all, to help investigate this problem, we can<br/>a)Press the SSH button on the instance Details page in the console. <br/>& b) Check the machine's syslog. <br/>
 Note: GCE console's monitoring tab has information that it can get from the hypervisor so we can see things like CPU usage <br/>but it cannot see error messages logged by the startup script.
 
-milestone1.png
+<img src="./images/milestone1.png" width="500"/>
+
 The real world is not about following instructions that someone else gives you, <br/>The real world is about figuring out what needs to be done and doing it.<br/>
 
 <h2 align="center">5. Scaling</h2>
@@ -149,11 +150,12 @@ We can use INSTANCE GROUPS to manage scaling of our infrastructure.
 ・When deleting Un-Managed Instance Group, instances are not automatically deleted and need to be further deleted manually.<br/>
 
 ➟ Managed instance Groups are created by using INSTANCE TEMPLATES only.<br/>
-・We have to switch to "[x]Multiple zone" to be able to have an unmanaged instance group.<br/>
+・We have to switch to "[x]Multiple zones" to be able to have an unmanaged instance group.<br/>
 ・It automatically scales and stops the instances as per the requirements and the set specifications. <br/>
-・Deleting a managed instance group will delete all of its instances because it owns them.<br/>\
-・In normal circumstances we want the cooldown period to be set longer than the total amount of time it takes to start up the instance and finish running its startup script.\
-・Health Check: This is about making sure that the instances are healthy to do the work that they need to do. <br/>If you imagine that you're running a program to pick up work packages but something went wrong with it and it crashed...<br/>That won't necessarily shut down the machine but if you have a health check that is continually asking: Are you still alright? What about now? Everything Good? <br/>Then if it doesn't get a positive response it can say all right there's something wrong with you, You need to be refreshed. It'll delete the problematic machine and create a new one from template.
+・Deleting a managed instance group will delete all of its instances because it owns them.<br/>
+・In normal circumstances we want the cooldown period to be set longer than the total amount of<br/> time it takes to start up the instance and finish running its startup script.<br/>
+・Health Check: This is about making sure that the instances are healthy to do the work that they need to do. <br/>  If you imagine that you're running a program to pick up work packages but something went wrong with it and it crashed...<br/>  That won't necessarily shut down the machine but if you have a health check that is continually asking: Are you still alright? What about now? Everything Good? <br/>  Then if it doesn't get a positive response it can say all right there's something wrong with you, You need to be refreshed. <br/>  It'll delete the problematic machine and create a new one from template.
+   
+<img src="./images/milestone2.png" width="500"/>
 
-😃Autoscaling is much better than manually managing instances <br/>😃 Everything depends on reliable automation<br/>
-milestone2.png
+😃 Autoscaling is much better than manually managing instances <br/>😃 Everything depends on reliable automation<br/>
