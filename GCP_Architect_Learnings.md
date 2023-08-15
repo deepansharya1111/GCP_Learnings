@@ -104,6 +104,7 @@ We have our Service Account selected to give VM access to Google services. <br/>
 If you look at the "Access scopes" under Service Account,  <br/>⮕ By default you only get read access to Google cloud storage and you don't actually get access to Google compute engine <br/>which is why we were unable to terminate the instance that we were using when we shelled into it.<br/>
 If you want you can "[x]Set access for each API" to send access on a service-by-service basis.<br/>
 Or [x] Allow full access to all Cloud APIs. Which we will choose for this exploration lab.<br/>
+⮕ Here are all the Default Scope settings and the Best Scope Practices: https://cloud.google.com/compute/docs/access/service-accounts#default_scopes
 ⮕ Now if you try to delete VM after ssh-ing, you can see in the activity logs <br/>That the last two activities to delete the VM were performed by the service account being used by compute engine instance, <br/>and not our user account.
 example: 339365196943-compute@developer.gserviceaccount.com deleted myvmname.
 
@@ -127,3 +128,32 @@ But when ssh=ing from console, look at the new keys added...<br/>
 They have a new "expireOn:" tag at the end, so Google will automatically remove these keys in a short while. <br/>They last long enough for us to make the connection to the instance <br/>but not long enough for them to become an issue of someone stealing these credentials and using them to mount an attack.
 
 </pre>
+→ Service Accounts: https://cloud.google.com/compute/docs/access/service-accounts <br/>
+→ VM instance lifecycle: https://cloud.google.com/compute/docs/instances/instance-life-cycle <br/>
+→ About VM metadata: https://cloud.google.com/compute/docs/metadata/overview#waitforchange <br/>
+・Note: We cannot pull logs from instance, The instances are set up to push their logs to Google Cloud operations (formerly Stackdriver) through the agent. <br/>
+Note: Metadata service uses the http service, not https <br/>
+・Tip: If a startup script for a newly created GCE instance did not run at all, to help investigate this problem, we can<br/>a)Press the SSH button on the instance Details page in the console. <br/>& b) Check the machine's syslog. <br/>
+Note: GCE console's monitoring tab has information that it can get from the hypervisor so we can see things like CPU usage <br/>but it cannot see error messages logged by the startup script.
+
+milestone1.png
+The real world is not about following instructions that someone else gives you, <br/>The real world is about figuring out what needs to be done and doing it.<br/>
+
+<h2 align="center">5. Scaling</h2>
+
+<pre>
+We can use INSTANCE GROUPS to manage scaling of our infrastructure.
+➟ Un-Managed Instance Group type <br/>require us to manually monitor the VM load then CREATE New VMs manually and add them to the group accordingly. <br/>
+・We have to switch to "[x]Single zone" to be able to have an unmanaged instance group.<br/>
+・We have to manually stop the instances when they are not being used. <br/>
+・When deleting Un-Managed Instance Group, instances are not automatically deleted and need to be further deleted manually.<br/>
+
+➟ Managed instance Groups are created by using INSTANCE TEMPLATES only.<br/>
+・We have to switch to "[x]Multiple zone" to be able to have an unmanaged instance group.<br/>
+・It automatically scales and stops the instances as per the requirements and the set specifications. <br/>
+・Deleting a managed instance group will delete all of its instances because it owns them.<br/>\
+・In normal circumstances we want the cooldown period to be set longer than the total amount of time it takes to start up the instance and finish running its startup script.\
+・Health Check: This is about making sure that the instances are healthy to do the work that they need to do. <br/>If you imagine that you're running a program to pick up work packages but something went wrong with it and it crashed...<br/>That won't necessarily shut down the machine but if you have a health check that is continually asking: Are you still alright? What about now? Everything Good? <br/>Then if it doesn't get a positive response it can say all right there's something wrong with you, You need to be refreshed. It'll delete the problematic machine and create a new one from template.
+
+😃Autoscaling is much better than manually managing instances <br/>😃 Everything depends on reliable automation<br/>
+milestone2.png
