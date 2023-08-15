@@ -183,7 +183,7 @@ How do we control data flow? (AAA)
 Key Security Products/Features:
 ➟ AuthN (authentication)
 ・ Identity - Humans in G Suite, Cloud Identity
-         - Applications & services use Service Accounts
+            - Applications & services use Service Accounts
 ・ Identity hierarchy: Google Groups
 ・ Can use Google Cloud Directory Sync (GCDS) to pull from LDAP (no push)
 <br/>
@@ -198,15 +198,15 @@ Key Security Products/Features:
 ➟ AccT (Accounting)
 ・ Audit Activity Logs (provided by Stackdriver)
 ・ Billing export - To BigQuery
-             - To file (in GCS bucket): Can be JSON or CSV
+                  - To file (in GCS bucket): Can be JSON or CSV
 ・ GCS Object Lifecycle Management
-<br/>------------------------------------------------
+------------------------------------------------<br/>
 ⮕ IAM Resource Hierarchy [AuthZ]
 Organization (Tied to G Suite or Cloud Identity domain)<br/> ↆ <br/>Folder (Contains any number of Projects and Subfolders)<br/> ↆ <br/>Project (Container for a set of related resources)<br/> ↆ <br/>Resource (Something you create in GCP)
-<br/>
+
 ⮕ Permissions: allows you to perform a certain action<br/>In the IAM world,
 -- Each permission follows the form ➟ Service.Resource.Verb
--- for example: pubsub.subscriptions.consume. <br/>
+-- for example: pubsub.subscriptions.consume.
 
 ⮕ Role: is a collection of Permissions to use or manage GCP resources.<br/>
 -- Primitive Roles: Project-level and often too broad
@@ -215,9 +215,8 @@ Organization (Tied to G Suite or Cloud Identity domain)<br/> ↆ <br/>Folder (Co
  ・ Owner: can also control access & billing
 -- Predefined Roles Give granular access to specific GCP resources
  ・ E.g.: roles/bigquery.dataEditor, roles/pubsub.subscriber
-<br/>
-・Roles Overview: https://cloud.google.com/iam/docs/roles-overview <br/>⮕ Complete List of Roles & Permissions: https://cloud.google.com/iam/docs/understanding-roles#basic
-<br/>
+
+⮕ Roles Overview: https://cloud.google.com/iam/docs/roles-overview <br/>⮕ Complete List of Roles & Permissions: https://cloud.google.com/iam/docs/understanding-roles#basic
 
 ⮕Member: A Member is some Google-known identity identified by a unique email address
 
@@ -226,7 +225,7 @@ Organization (Tied to G Suite or Cloud Identity domain)<br/> ↆ <br/>Folder (Co
 -- group: is a named collection of Google accounts and service accounts. (giving developer access) 
 -- domain: for when you want to grant access to some resource to every single account in a particular domain.  That domain needs to be managed by G Suite or Cloud Identity
 -- allAuthenticatedUsers: Resource is Public but needs some Google account or service account. (The only difference is that you can tie actions back to some user account which is what makes this different)
--- allUsers: Anyone on the Internet, no authentication needed, completely anonymous access is fine. (Public)
+-- allUsers: Anyone on the Internet, no authentication needed, completely anonymous access is fine. (Public) <br/>
 - Group should be the default choice always
 - Use them for everything!
 - You can even use a group to be the owner of projects when you have an organization.
