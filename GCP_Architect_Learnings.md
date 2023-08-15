@@ -270,3 +270,7 @@ BILLING IAM ROLES ⬇
 ・Project Billing Manager = Link/Unlink projects to biling account. (Scope=Project level)
 
 </pre>
+
+<h2 align="center">7. Networking</h2>
+
+<pre>
