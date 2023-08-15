@@ -202,7 +202,13 @@ Key Security Products/Features:
 ・ GCS Object Lifecycle Management
 ------------------------------------------------<br/>
 ⮕ IAM Resource Hierarchy [AuthZ]
-Organization (Tied to G Suite or Cloud Identity domain)<br/> ↆ <br/>Folder (Contains any number of Projects and Subfolders)<br/> ↆ <br/>Project (Container for a set of related resources)<br/> ↆ <br/>Resource (Something you create in GCP)
+Organization (Tied to G Suite or Cloud Identity domain)
+ ↆ 
+Folder (Contains any number of Projects and Subfolders)
+ ↆ
+Project (Container for a set of related resources)
+ ↆ
+Resource (Something you create in GCP)
 
 ⮕ Permissions: allows you to perform a certain action<br/>In the IAM world,
 -- Each permission follows the form ➟ Service.Resource.Verb
@@ -232,5 +238,35 @@ Organization (Tied to G Suite or Cloud Identity domain)<br/> ↆ <br/>Folder (Co
 - And to be able to manage the groups effectively in an organization, you can nest them. <br/>So for example you might want to have one group for each department and then have another group called all staff. This is good because every employee will be in some department so they'll always be included in the all staff group. And it's a lot less work to manage adding and removing employees this way than going and finding each and every one of the groups that they should be a part of.
 
 ⮕ Policies
-Each resource can have exactly one policy attached to it.
-By default Resources generally have an empty policy attached to them.<br/>Now in that one policy per resource you can have a maximum of 1500 member bindings. It should never get to that number. Always use group.
+・Each resource can have exactly one policy attached to it.
+・By default Resources generally have an empty policy attached to them.
+・Now in that one policy per resource you can have a maximum of 1500 member bindings. It should never get to that number. Always use group.
+・Policies are Always additive ("Allow only") and never subtractive (no "Deny").<br/>
+<img src="./images/policies-example.png" width="700"/> Source: https://cloud.google.com/iam/docs/overview
+
+Note: Manual work Not Preferred = Can use get-iam-policy, edit the JSON/YAML, and set-iam-policy back.
+[Prefer "add-iam-policy-binding" & "remove-iam-policy-binding"]
+ADDING A POLICY ⬇
+⮕ gcloud [GROUP] add-iam-policy-binding [RESOURCE-NAME]
+ --role [ROLE-ID-TO-GRANT] --member user: [USER-EMAIL]
+REMOVING A POLICY ⬇
+⮕ gcloud [GROUP] remove-iam-policy-binding [RESOURCE-NAME]
+ --role [ROLE-ID-TO-REVOKE] --member user: [USER-EMAIL]
+
+➟ example 1: 
+ gcloud compute instances add-iam-policy-binding my-instance
+ --role roles/compute.instanceAdmin
+ --member user: me@example.com <br/>
+➟ example 2: 
+ gcloud compute instances add-iam-policy-binding my-instance --zone=ZONE --member='user:test-user@gmail.com' --role='roles/compute.securityAdmin'
+
+Best Practices: Using IAM Securely= https://cloud.google.com/iam/docs/using-iam-securely
+
+BILLING IAM ROLES ⬇
+・Billing Account Creator = Create new self-serve billing accounts (Scope= User at Org level)
+・Billing Account Administrator = Manage billing accounts (but not create them). (Scope= User at Billing Account level)
+・Billing Account User = Link projects to billing accounts. (Scope= User at Billing Account level)
+・Billing Account Viewer = View billing account cost information and transactions. (So this is a role that could let you audit what's going on but not change anything.)
+・Project Billing Manager = Link/Unlink projects to biling account. (Scope=Project level)
+
+</pre>
