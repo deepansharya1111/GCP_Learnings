@@ -266,8 +266,8 @@ BILLING IAM ROLES ⬇
 ・Billing Account Creator = Create new self-serve billing accounts (Scope= User at Org level)
 ・Billing Account Administrator = Manage billing accounts (but not create them). (Scope= User at Billing Account level)
 ・Billing Account User = Link projects to billing accounts. (Scope= User at Billing Account level)
-・Billing Account Viewer = View billing account cost information and transactions. (So this is a role that could let you audit what's going on but not change anything.)
-・Project Billing Manager = Link/Unlink projects to biling account. (Scope=Project level)
+・Billing Account Viewer = View billing account cost information and transactions. (This role could let you audit what's going on but not change anything.)
+・Project Billing Manager = Link/Unlink projects to a billing account. (Scope=Project level)
 
 </pre>
 
