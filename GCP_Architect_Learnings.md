@@ -295,3 +295,4 @@ Reasons to direct data flow to different resources:
  ・ (If you imagine something like an online store, you might have some systems that handle the item catalog, maybe other systems that know about the current inventory levels, and yet different systems that handle user data like past orders that they ve placed or maybe even what's in their cart right now.)
  ⮕ READ: Routing schemes https://en.wikipedia.org/wiki/Routing
 -- 
+-- 
