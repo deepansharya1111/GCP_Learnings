@@ -277,22 +277,25 @@ BILLING IAM ROLES ⬇
 Don't think in terms of connections and networks.
 Instead, think about how each piece of data makes its journey from place to place.
 ・Routing is about deciding where data should go next.
- ⮕ READ: 7 layers of OSI https://www.webopedia.com/definitions/7-layers-of-osi-model/
   ⮕ READ: Hot vs Cold Potato Routing https://en.wikipedia.org/wiki/Hot-potato_and_cold-potato_routing<br/>
 <img src="./images/google uses cold networking & not hot.png" width="700"/>
  ⮕ READ: Networking tears https://cloud.google.com/blog/products/networking/introducing-network-service-tiers-your-cloud-network-your-way <br/>
 Let's take a look at how data makes its way from the front door of Google's network to the correct resource in our system.
 
-Reasons to direct data flow to different resources:
--- Latency reduction = Use servers physically close to clients. (You want your system to respond quickly to users. So it's good if your servers are physically close to them.)
- ➟ Use Cross-Region Load Balancing (with Global Anycast IPs)<br/>
--- Load balancing = Let's say you have too many incoming requests to be handled by just one machine. So you add a second machine to help out, but there's no point in doing that if all of the incoming requests still go to the overloaded machine, right? That's why we need load balancing to divide the requests amongst the machines that can handle them. 
- ➟ Use Cloud Load Balancer (all types; internal and external)
- ・ (So Load balancing is Separate from auto-scaling to handle fluctuating workloads. Yes, they work well together, but it would be best to keep a mental model that has them related, not entirely overlapped.)
+⭐ Reasons to direct data flow to different resources:
+~~ Latency reduction = Use servers physically close to clients. (You want your system to respond quickly to users. So it's good if your servers are physically close to them.)
+ -- Use Cross-Region Load Balancing (with Global Anycast IPs)
+  ⮕ READ: Routing schemes (Unicast,Anycast, etc) https://en.wikipedia.org/wiki/Routing<br/>
+~~ Load balancing = Let's say you have too many incoming requests to be handled by just one machine. So you add a second machine to help out, but there's no point in doing that if all of the incoming requests still go to the overloaded machine, right? That's why we need load balancing to divide the requests amongst the machines that can handle them. 
+ -- Use Cloud Load Balancer (all types; internal and external)
+ -- (So Load balancing is Separate from auto-scaling to handle fluctuating workloads. Yes, they work well together, but it would be best to keep a mental model that has them related, not entirely overlapped.)
  ⮕ READ: https://cloud.google.com/load-balancing/docs/load-balancing-overview<br/>
--- System design = You might have different servers in your system handling different parts of that system. And this is especially true when your service is composed of micro services rather than all jammed together (in a monolith).
- ➟ Use HTTP(S) Load Balancer (with URL Map)
- ・ (If you imagine something like an online store, you might have some systems that handle the item catalog, maybe other systems that know about the current inventory levels, and yet different systems that handle user data like past orders that they ve placed or maybe even what's in their cart right now.)
- ⮕ READ: Routing schemes https://en.wikipedia.org/wiki/Routing
--- 
--- 
+~~ System design = You might have different servers in your system handling different parts of that system. And this is especially true when your service is composed of micro services rather than all jammed together (in a monolith).
+ -- Use HTTP(S) Load Balancer (with URL Map)
+ -- (If you imagine something like an online store, you might have some systems that handle the item catalog, maybe other systems that know about the current inventory levels, and yet different systems that handle user data like past orders that they ve placed or maybe even what's in their cart right now.)<br/>
+~~ Layer 4 vs. Layer 7
+ ⮕ READ: 7 layers of OSI https://www.webopedia.com/definitions/7-layers-of-osi-model/
+ -- Layer 4 only knows IPs (TCP/IP layer) and cannot route based on the URL paths defined in L7
+ -- Layer 7 knows HTTP and HTTPS URLs and Paths.
+     -- Question= Why not use Layer 4 with DNS? DNS knows all the paths right? 
+     -- Answer= No, 1) DNS only returns a Layer 4 IP address, and doesn't know full URLs. 2) DNS lookups tend to be sticky, I.e, they lock on to a single machine until the TTL expires (TimeToLive= how long that particular DNS lookup as valid). Conversely, If TTL is too short, like 0-1 second, means every single connection has to redo the DNS look up which is also costly, because each request includes another round-trip, 
