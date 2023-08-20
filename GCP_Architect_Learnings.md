@@ -277,7 +277,7 @@ BILLING IAM ROLES ⬇
 Don't think in terms of connections and networks.
 Instead, think about how each piece of data makes its journey from place to place.
 ・Routing is about deciding where data should go next.
-  ⮕ READ: Hot vs Cold Potato Routing https://en.wikipedia.org/wiki/Hot-potato_and_cold-potato_routing<br/>
+  ⮕ READ: Cold Potato vs Hot Potato Routing https://en.wikipedia.org/wiki/Hot-potato_and_cold-potato_routing<br/>
 <img src="./images/google uses cold networking & not hot.png" width="700"/>
  ⮕ READ: Networking tears https://cloud.google.com/blog/products/networking/introducing-network-service-tiers-your-cloud-network-your-way <br/>
 Let's take a look at how data makes its way from the front door of Google's network to the correct resource in our system.
@@ -298,4 +298,17 @@ Let's take a look at how data makes its way from the front door of Google's netw
  -- Layer 4 only knows IPs (TCP/IP layer) and cannot route based on the URL paths defined in L7
  -- Layer 7 knows HTTP and HTTPS URLs and Paths.
      -- Question= Why not use Layer 4 with DNS? DNS knows all the paths right? 
-     -- Answer= No, 1) DNS only returns a Layer 4 IP address, and doesn't know full URLs. 2) DNS lookups tend to be sticky, I.e, they lock on to a single machine until the TTL expires (TimeToLive= how long that particular DNS lookup as valid). Conversely, If TTL is too short, like 0-1 second, means every single connection has to redo the DNS look up which is also costly, because each request includes another round-trip, 
+     -- Answer= No, 1) DNS only returns a Layer 4 IP address, and doesn't know full URLs. 2) DNS lookups tend to be sticky, i.e, they lock on to a single machine, and they'll never stop trying to connect to that machine until TTL expires even if it's overloaded or dead (TimeToLive= how long that particular DNS lookup as valid). Conversely, If TTL is too short, like 0-1 second, means every single connection has to redo the DNS look up which is also costly, because each request includes another round-trip which is also slower. 3) Not Robust - Relies on the client always doing the right thing which they don't.<br/>
+~~ Getting data from one resource to another
+ -- VPC Network (Global) is used
+ -- Virtual Private Cloud = This is your private software-defined networking space in GCP.
+ -- Not just resource-to-resource, it also manages the doors to outside & peers. It defines the overall network.
+ -- Inside of it, we need subnets to divide up that space.
+ -- Subnets are regional = meaning that a single subnet can be used by multiple resources across all of the availability zones in a region.
+       -- But even though the subnets are regional, they're all still globally connected.
+       -- Means all Subnets can reach all others globally without any need for VPNs.
+ -- Routes (global) define "next hop" for traffic based on destination IP, and apply by Instance-level Tags, not by Subnet.
+ -- Firewall Rules (global) further filter data flow that would otherwise route. Default Firewall Rules are restrictive inbound and permissive outbound.<br/>
+ ~~ IPV4 address = is abc.def .ghi. jkl (dotted quad) where each piece is 0-255
+  -- CIDR block is group of IP addresses (Classless Inter-Domain routing Block, not much important I guess)
+<img src="./images/IPs and CIDR block.png" width="700"/
