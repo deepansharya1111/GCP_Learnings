@@ -309,6 +309,63 @@ Let's take a look at how data makes its way from the front door of Google's netw
        -- Means all Subnets can reach all others globally without any need for VPNs.
  -- Routes (global) define "next hop" for traffic based on destination IP, and apply by Instance-level Tags, not by Subnet.
  -- Firewall Rules (global) further filter data flow that would otherwise route. Default Firewall Rules are restrictive inbound and permissive outbound.<br/>
- ~~ IPV4 address = is abc.def .ghi. jkl (dotted quad) where each piece is 0-255
-  -- CIDR block is group of IP addresses (Classless Inter-Domain routing Block, not much important I guess)
-<img src="./images/IPs and CIDR block.png" width="700"/
+~~ IPV4 address = is abc.def.ghi.jkl (dotted quad) where each piece is 0-255 (This is derived from the 8 bits available for host addresses (2^8 = 256))
+      -- Bits are the smallest unit of data in computing. They only have two possible values - 0 or 1. An IP address is made up of 32 bits divided into four octets (or bytes). Each octet is made up of 8 bits.
+      -- The reason why 8 bits correspond to 256 values is due to how binary math works. With 8 bits, you have 2^8 or 256 possible combinations. This is because each bit position can be either a zero or a one, so each bit doubles the number of possible combinations.
+      -- Here is how it looks: [2^0 = 1 (binary: 00000001)] + [2^1 = 2 (binary: 00000010)] + [2^2 = 4 (binary: 00000100)] + [2^3 = 8 (binary: 00001000)] + [2^4 = 16 (binary: 00010000)] + [2^5 = 32 (binary: 00100000)] + [2^6 = 64 (binary: 01000000)] + [2^7 = 128 (binary: 10000000)] = If you add all those up (1 + 2 + 4 + 8 + 16 + 32 + 64 + 128), or go straight to 2^8, you get 256.
+      -- So, with 8 bits, the values can range from 0 (all bits are 0) to 255 (all bits are 1), providing 256 total possible values.<br/>
+~~ CIDR block is group of IP addresses (Classless Inter-Domain routing Block, full form not much important for exam I guess)
+<img src="./images/IPs and CIDR block.png" width="700">
+      -- Each IP range is 8 Bit binary number. 8x4 Totals to 32 bit per IP address in subnet.
+      -- IP.IP.IP.IP/32 means Single IP = as all 32 bits are locked.
+      -- IP.IP.IP.0/24 means there are 256 possible IP addresses within the subnet = because last 8 bits are free (represented by the "/24") & can take on 256 different values (0 to 255). 
+      -- IP.IP.0.0/24 also means there are 256 possible IP but you can break this CIDR block into two subnets, each supporting 128 IP addresses.
+      -- However, typically the first address (e.g., IP.IP.IP.0) is reserved as the network address and the last address (e.g., IP.IP.IP.255) is typically reserved as the broadcast address. So, in practical usage, there are typically 254 assignable IP addresses for hosts in a /24 network.
+      -- IP.IP.0.0/16 = In the given IP address range, the "/16" refers to the subnet mask, meaning the first 16 bits of the IP address are designated for the network, and the remaining 16 bits are for host addresses. Given this, there are 65,536 possible IP addresses because 2^16 equals 65,536 -minus (first address reserved for the network address, and last for broadcast address) = practically 65,534 assignable IP addresses.
+      -- IP.0.0.0/8 means there are a total of 16,777,216 possible IP addresses since 2^24 equals 16,777,216. Practically -minus 2 = 16,777,214.
+      -- 0.0.0.0/0 means "any IP address" because no bits are locked.<br/>
+ ~~ Creating VPCs
+   -- Activate these firewall rules while creating a Auto-subnet mode VPC
+	   -- my-auto-vpc-allow-icmp (imp allows to ping the machine, trace route and also quite valuable for diagnostics)
+     -- my-auto-vpc-allow-internal (this allows internal traffic to be accepted inside the VPC)
+     -- my-auto-vpc-allow-rdp (to allow rep connection)
+     -- my-auto-vpc-allow-ssh (it uses the port 22 and allows us to ssh to the instances we create) (since default behaviour is to allow all incoming requests due to 0.0.0.0/0, which should not be a problem as long as our ssh keys are safe, still if we want more security then we can create a custom firewall rule to allow specific IP also).
+   ~~ In Custom VPC
+	   -- Add a name and region
+	   -- In IP address range, we can add a private IP address ranges that are defined by RFC 1918 like 192.168.0.0/24 
+		   -- (RFC 1918 refers to a set of standards defined by the Internet Engineering Task Force (IETF) that specifies IP address ranges that are reserved for private use. These IP address ranges are not routable over the internet and are intended for use in private networks such as local area networks (LANs) or virtual private networks (VPNs). 
+		   -- The three IP address ranges defined in RFC 1918 are = 10.0.0.0 to 10.255.255.255 (10.0.0.0/8) - This range allows for approximately 16 million private IP addresses. It is typically used for larger organizations or networks.
+		   -- Or = 172.16.0.0 to 172.31.255.255 (172.16.0.0/12)) - This range allows for approximately 1 million private IP addresses. It is commonly used for medium-sized networks.
+		   -- Or = 192.168.0.0 – 192.168.255.255 (192.168.0.0/24)
+	   -- In secondary IP range:
+		   -- Private Google access, means that you can connect to Google services even without being able to connect out to the Internet. (Can leave off)
+		   -- turning on Flow logs, would give us pretty detailed information about all of the traffic that's happening on this subnet. (Can leave off)
+			-- For Dynamic routing mode, Can choose Global this time instead of Regional, you ever connect a VPN to this VPC because that way you'll more easily be able to access all of the subnets across the world.
+	⭐ NOTE: To allow incoming traffic like to ping our instances: create firewall rule=
+	<img src="./images/firewall rule vpc1.png" width="300">
+	<img src="./images/firewall rule vpc2.png" width="300">
+	-- We would generally be allowing TCP traffic on port 80 (or 443 for web traffic, or 3306 to access mySQL). So that HTTP and HTTPs connections can be made to these instances.
+	-- But if I want to focus on the network traffic only and not on setting up web servers, So I'm just going to say that ICMP like ping is what we're using to test the connections.
+	<img src="./images/firewall rule vpc3.png" width="300">
+	-- To allow SSH using VPC, create a Firewall rule with a Network tag and port 22 in tcp. Then add that Network tag to our instance.
+	 <br/>
+	~~~~ Create a Service Account with a Custom Role
+		-- Go to IAM > Roles, filter the roles like: Title *writer* 
+			-- eg: Logs Writer, Monitoring Metric Writer
+			-- note: If google updates details in any Selected Role in future, it won't be automatically updated in our created Custom Role. To update it, just update the "ID" tag while editing our role.
+		-- choose required roles, and click create
+		-- you can manage custom roles through a lifecycle, but we don't really need to do that at always so we're just going to set the "Role launch stage" to general availability.
+		-- Delete Default service account from IAM > Service acc
+		-- Create a new one with our custom role :) <br/>
+	~~~~ Creating a new Instance Template with custom role
+		-- In "Identity and API access" choose the new custom Service account.
+		-- we're not prompted to set the access scopes, because access scopes really only apply to the default service account. (For custom service acc, google assumes that the permissions that we've granted are all we want.)
+		-- Expand the "Advanced options" and switch over to the "Networking" tab.
+		-- set our VPC in "Network" and our custom subnet in "Subnet"
+		~~~~ Creating a new Managed Instance Group
+			-- (choose Multiple zones) and a region 
+			-- Choose our instance template
+			-- Although when if there's not use of much CPU, we'll just leave most of these defaults but set our minimum instances to two and our maximum to three that's all.
+			-- create.
+When done with everything regarding work, Disable autoscaling and set "Number of instances" to zero to delete the instances and save money.
+
