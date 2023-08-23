@@ -368,4 +368,4 @@ Let's take a look at how data makes its way from the front door of Google's netw
 			-- Although when if there's not use of much CPU, we'll just leave most of these defaults but set our minimum instances to two and our maximum to three that's all.
 			-- create.
 When done with everything regarding work, Disable autoscaling and set "Number of instances" to zero to delete the instances and save money.
-
+</pre>
