@@ -369,3 +369,31 @@ Let's take a look at how data makes its way from the front door of Google's netw
 			-- create.
 When done with everything regarding work, Disable autoscaling and set "Number of instances" to zero to delete the instances and save money.
 </pre>
+
+<h2 align="center">8. Kubernetes </h2>
+
+<pre>
+The atomic unit for a virtualisation environment is the VM, while the atomic unit for a Kubernetes environment is the pod, so the smallest thing you can deploy on a Kubernetes cluster is a pod.
+But inside of each pod is one or more containers anyway.
+Application code exists in containers and,
+containers run in pods on Kubernetes.
+
+Well the pod is an object on the cluster and it's defined in the API as a resource under the v1 core API group.
+we wrap them in a high level object called a deployment.
+This again is an object on the cluster and it's a resource in the apps/v1 API group.
+Now the whole idea of deployment is to make pods cool.
+Well it's not really it's to make them scalable making
+rolling updates and rollback simple and a ton of cool stuff.
+So kind of cool but really it's about being flexible and more useful.
+So pods and deployments exist in the api and They can be deployed on the cluster as objects.
+Deployments are great for scaling and updates but other objects exist for wrapping your pods 
+so daemon sets make sure that one and only one of a specific pod will run on every worker in the cluster.
+
+kind: Service = loadbalancer
+ Spec:
+ type: LoadBalancer
+ 
+ Load balancer = a cloud-based load balancer and then integrates that with the service on your cluster.
+ 
+Cluster IP is the default service and it's the most basic.
+Now that means if you see a manifest file that doesn't actually specify a type you're going to be getting cluster IP.
