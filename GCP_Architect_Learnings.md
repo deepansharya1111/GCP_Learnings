@@ -370,7 +370,7 @@ Let's take a look at how data makes its way from the front door of Google's netw
 When done with everything regarding work, Disable autoscaling and set "Number of instances" to zero to delete the instances and save money.
 </pre>
 
-<h2 align="center">8. Kubernetes </h2>
+<h2 align="center">8. Kubernetes (will refine later)</h2>
 
 <pre>
 The atomic unit for a virtualisation environment is the VM, while the atomic unit for a Kubernetes environment is the pod, so the smallest thing you can deploy on a Kubernetes cluster is a pod.
@@ -397,3 +397,12 @@ kind: Service = loadbalancer
  
 Cluster IP is the default service and it's the most basic.
 Now that means if you see a manifest file that doesn't actually specify a type you're going to be getting cluster IP.
+
+</pre>
+
+<h2 align="center">9.Services </h2>
+<pre>
+
+
+
+</pre>
