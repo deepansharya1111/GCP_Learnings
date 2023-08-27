@@ -404,5 +404,4 @@ Now that means if you see a manifest file that doesn't actually specify a type y
 <pre>
 
 
-
 </pre>
