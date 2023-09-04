@@ -403,5 +403,11 @@ Now that means if you see a manifest file that doesn't actually specify a type y
 <h2 align="center">9.Services </h2>
 <pre>
 
-
 </pre>
+
+Commands:
+
+$gcloud iam roles copy
+https://cloud.google.com/sdk/gcloud/reference/iam/roles/copy
+
+$
