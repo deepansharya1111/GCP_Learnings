@@ -402,6 +402,23 @@ Now that means if you see a manifest file that doesn't actually specify a type y
 
 <h2 align="center">9.Services </h2>
 <pre>
+App Engine Standard is a managed platform-as-a-service (PaaS) offering on GCP, which allows you to deploy and manage applications without worrying about the underlying infrastructure.
+
+Compute Engine is an infrastructure-as-a-service (IaaS) offering on GCP that allows you to create and manage virtual machines.
+
+Google Cloud Deployment Manager is a tool that allows users to specify a "configuration file" of Google Cloud resources in a YAML or JSON file, and then deploy and manage those resources as a single unit. Deployment Manager provides a way to create, update, and delete deployments of resources, as well as to preview and validate deployments before they are executed.
+
+To estimate the cost of a query in BigQuery, run a dry run query in CLI, which provides an estimate of the number of bytes "read" by the actual query. You can then use the BigQuery Pricing Calculator to convert the bytes estimate to dollars.
+$bq query --dry_run 'SELECT * FROM mydataset.mytable' 
+Look for the totalBytesProcessed field in the output, which will provide an estimate of the number of bytes that will be processed by the actual query.
+Pricing calculator, go to the following website: https://cloud.google.com/products/calculator.
+
+Google Cloud's Container Registry is a private Docker image registry that allows you to store, manage, and secure Docker images. (So don't use cloud storage)
+$gcloud auth configure-docker
+$docker push gcr.io/<project_id>/<image_name>:<version_tag> # push the image to Container Registry 
+Create a Deployment YAML file to point to that image. It is used to specify how many instances of the Docker image should be running, what ports should be exposed, and other configuration options. 
+Finally, use the kubectl command to create the deployment. Replace <deployment_file> with the name of the YAML file just created.
+$kubectl apply -f <deployment_file>.yaml
 
 </pre>
 
@@ -410,4 +427,5 @@ Commands:
 $gcloud iam roles copy
 https://cloud.google.com/sdk/gcloud/reference/iam/roles/copy
 
-$
+
+
