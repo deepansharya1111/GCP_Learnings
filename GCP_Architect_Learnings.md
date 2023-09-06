@@ -406,11 +406,29 @@ App Engine Standard is a managed platform-as-a-service (PaaS) offering on GCP, w
 
 Compute Engine is an infrastructure-as-a-service (IaaS) offering on GCP that allows you to create and manage virtual machines.
 
+Cloud Storage Object Lifecycle Management is a feature that can be used to automatically move or delete objects in a bucket based on certain conditions such as age, time since last modification, and storage class.
+
 Google Cloud Deployment Manager is a tool that allows users to specify a "configuration file" of Google Cloud resources in a YAML or JSON file, and then deploy and manage those resources as a single unit. Deployment Manager provides a way to create, update, and delete deployments of resources, as well as to preview and validate deployments before they are executed.
 
+Cloud Dataflow
+
+Cloud Spanner
+
+Cloud Datastore: provides SQL-database-like ACID transactions on subsets of the data known as entity groups.
+・Datastore charges for read/write operations, storage and bandwidth.
+
+Cloud Bigtable: is a NoSQL database,
+・not suitable for analyzing billing data.
+・charges for 'nodes', storage and bandwidth.
+
+<img src="./images/storage classes.jpg" width="500">
+Difference b/w Bigtable and Datastore: https://stackoverflow.com/questions/30085326/google-cloud-bigtable-vs-google-cloud-datastore
+
+BigQuery: BigQuery is a powerful, fully managed, cloud-native data warehouse that allows you to store, analyze, and query large datasets quickly and efficiently.
 To estimate the cost of a query in BigQuery, run a dry run query in CLI, which provides an estimate of the number of bytes "read" by the actual query. You can then use the BigQuery Pricing Calculator to convert the bytes estimate to dollars.
 $bq query --dry_run 'SELECT * FROM mydataset.mytable' 
 Look for the totalBytesProcessed field in the output, which will provide an estimate of the number of bytes that will be processed by the actual query.
+
 Pricing calculator, go to the following website: https://cloud.google.com/products/calculator.
 
 Google Cloud's Container Registry is a private Docker image registry that allows you to store, manage, and secure Docker images. (So don't use cloud storage)
@@ -420,12 +438,19 @@ Create a Deployment YAML file to point to that image. It is used to specify how 
 Finally, use the kubectl command to create the deployment. Replace <deployment_file> with the name of the YAML file just created.
 $kubectl apply -f <deployment_file>.yaml
 
+To change Service account of an existing VM:
+Download the JSON private key for the service account, ssh into the VM, and save the JSON under the "~/.gcloud/" directory with a filename like "compute-engine-service-account.json". Then, set the environment variable "GOOGLE_APPLICATION_CREDENTIALS" to the path of this file. This will configure the Google Cloud SDK and other applications running on the VM to use this service account.
+
+Secure Shell (SSH) connections use port 22 and 
+RDP connections use port 3389
+
+
+
 </pre>
 
 Commands:
 
 $gcloud iam roles copy
 https://cloud.google.com/sdk/gcloud/reference/iam/roles/copy
-
 
 
