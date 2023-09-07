@@ -19,7 +19,9 @@ Used for:
   ・for redundancy. Regional buckets are ideal for applications that have regional data requirements, such as analytics, backups, and content distribution within a specific geographic area.
   <br>
  ➟ Nearline<br>
-  ・for storing infrequently accessed data that may need to be accessed within seconds or minutes. with a slightly higher access latency. This type of bucket is suitable for data that needs to be available for quick retrieval but is not accessed frequently, such as backup archives, disaster recovery data, and long-term storage.
+  ・for storing infrequently accessed data that may need to be accessed within seconds or minutes. with a slightly higher access latency. This type of bucket is suitable for data that needs to be available for quick retrieval but is not accessed frequently, such as backup archives, disaster recovery data, and long-term storage.<br>
+	  -- Parallel composite uploads: split the file into multiple parts and upload them simultaneously, enabling multiple TCP connections to transfer the data concurrently. This approach allows the bandwidth to be fully utilized, and the file can be uploaded much faster than with a single connection.
+	  -- command-line tool like gsutil supports parallel composite uploads
   <br>
 ➟ Coldline<br>
   ・designed for long-term archival storage of data that is rarely accessed. accessed no more than once per year, such as regulatory or compliance archives, historical records, and large-scale data archiving.
@@ -104,7 +106,8 @@ We have our Service Account selected to give VM access to Google services. <br/>
 If you look at the "Access scopes" under Service Account,  <br/>⮕ By default you only get read access to Google cloud storage and you don't actually get access to Google compute engine <br/>which is why we were unable to terminate the instance that we were using when we shelled into it.<br/>
 If you want you can "[x]Set access for each API" to send access on a service-by-service basis.<br/>
 Or [x] Allow full access to all Cloud APIs. Which we will choose for this exploration lab.<br/>
-⮕ Here are all the Default Scope settings and the Best Scope Practices: https://cloud.google.com/compute/docs/access/service-accounts#default_scopes
+⮕ Here are some Default Scope settings and the Best Scope Practices: https://cloud.google.com/compute/docs/access/service-accounts#default_scopes
+⮕ All access scopes: https://developers.google.com/identity/protocols/oauth2/scopes
 ⮕ Now if you try to delete VM after ssh-ing, you can see in the activity logs <br/>That the last two activities to delete the VM were performed by the service account being used by compute engine instance, <br/>and not our user account.
 example: 339365196943-compute@developer.gserviceaccount.com deleted myvmname.
 
@@ -128,6 +131,8 @@ But when ssh=ing from console, look at the new keys added...<br/>
 They have a new "expireOn:" tag at the end, so Google will automatically remove these keys in a short while. <br/>They last long enough for us to make the connection to the instance <br/>but not long enough for them to become an issue of someone stealing these credentials and using them to mount an attack.
 
 </pre>
+A preemptible VM instance, short for preemptible virtual machine, is a type of virtual machine that can be interrupted or terminated by the cloud provider at any time, typically after 24 hours of uptime. The main advantage of using preemptible VMs is their significantly lower cost compared to regular VMs.
+
 → Service Accounts: https://cloud.google.com/compute/docs/access/service-accounts <br/>
 → VM instance lifecycle: https://cloud.google.com/compute/docs/instances/instance-life-cycle <br/>
 → About VM metadata: https://cloud.google.com/compute/docs/metadata/overview#waitforchange <br/>
@@ -154,7 +159,8 @@ We can use INSTANCE GROUPS to manage the scaling of our infrastructure.
 ・It automatically scales and stops the instances as per the requirements and the set specifications. <br/>
 ・Deleting a managed instance group will delete all of its instances because it owns them.<br/>
 ・In normal circumstances, we want the cooldown period to be set longer than the total amount of<br/> time it takes to start up the instance and finish running its startup script.<br/>
-・Health Check: This is about ensuring that the instances are healthy enough to do the work they need to do. <br/>  If you imagine that you're running a program to pick up work packages, but something went wrong with it, and it crashed...<br/>  That won't necessarily shut down the machine, but if you have a health check that is continually asking: Are you still alright? What about now? Everything Good? <br/>  Then, if it doesn't get a positive response, it can say all right, there's something wrong with you, You need to be refreshed. <br/>  It'll delete the problematic machine and create a new one from template.
+・Health Check: This is about ensuring that the instances are healthy enough to do the work they need to do. <br/>  If you imagine that you're running a program to pick up work packages, but something went wrong with it, and it crashed...<br/>  That won't necessarily shut down the machine, but if you have a health check that is continually asking: Are you still alright? What about now? Everything Good? <br/>  Then, if it doesn't get a positive response, it can say all right, there's something wrong with you, You need to be refreshed. <br/>  It'll delete the problematic machine and create a new one from template.<br/>
+The `On-host maintenance` option to Migrate VM instances ensures that your VM instances will be highly available during system maintenance. When Google Cloud Platform needs to perform maintenance on the physical host where your VM instance is running, the instance will be automatically migrated to a new host, without any disruption to your application.
    
 <img src="./images/milestone2.png" width="500"/>
 
@@ -292,7 +298,8 @@ Let's take a look at how data makes its way from the front door of Google's netw
  ⮕ READ: https://cloud.google.com/load-balancing/docs/load-balancing-overview<br/>
 ~~ System design = You might have different servers in your system handling different parts of that system. And this is especially true when your service is composed of micro services rather than all jammed together (in a monolith).
  -- Use HTTP(S) Load Balancer (with URL Map)
- -- (If you imagine something like an online store, you might have some systems that handle the item catalog, maybe other systems that know about the current inventory levels, and yet different systems that handle user data like past orders that they ve placed or maybe even what's in their cart right now.)<br/>
+ -- (If you imagine something like an online store, you might have some systems that handle the item catalog, maybe other systems that know about the current inventory levels, and yet different systems that handle user data like past orders that they we placed or maybe even what's in their cart right now.)
+ -- This supports SSL/TLS offloading unlike others, allowing the load balancer to terminate SSL sessions and decrypt traffic before forwarding it to the backend instances. It has several benefits, such as improved security, reduced CPU load on backend instance<br/>
 ~~ Layer 4 vs. Layer 7
  ⮕ READ: 7 layers of OSI https://www.webopedia.com/definitions/7-layers-of-osi-model/
  -- Layer 4 only knows IPs (TCP/IP layer) and cannot route based on the URL paths defined in L7
@@ -301,6 +308,11 @@ Let's take a look at how data makes its way from the front door of Google's netw
      -- Answer= No, 1) DNS only returns a Layer 4 IP address, and doesn't know full URLs. 2) DNS lookups tend to be sticky, i.e, they lock on to a single machine, and they'll never stop trying to connect to that machine until TTL expires even if it's overloaded or dead (TimeToLive= how long that particular DNS lookup as valid). Conversely, If TTL is too short, like 0-1 second, means every single connection has to redo the DNS look up which is also costly, because each request includes another round-trip which is also slower. 3) Not Robust - Relies on the client always doing the right thing which they don't.<br/>
 ~~ Getting data from one resource to another
  -- VPC Network (Global) is used
+
+why do we need vpc in google cloud?
+= A Virtual Private Cloud (VPC) is important in Google Cloud for several reasons. Firstly, it provides a secure and isolated environment for your resources. With a VPC, you can create *multiple subnets and control network access using firewall rules, helping to protect your data from unauthorized access. Additionally, a VPC allows for easy scalability and flexibility. You can expand your network by creating new subnets or adding more resources, without affecting other parts of your infrastructure. This enables efficient resource management and cost optimization. Furthermore, having a VPC enables you to establish VPN connections to securely connect your on-premises network to your Google Cloud network. This allows for hybrid cloud scenarios.
+Shared VPC lets you map each tier of the web service to different projects so that they can be managed by different teams while sharing a common VPC network: Resources, such as instances and load balancer components, for each tier are placed in individual service projects managed by different teams.
+
  -- Virtual Private Cloud = This is your private software-defined networking space in GCP.
  -- Not just resource-to-resource, it also manages the doors to outside & peers. It defines the overall network.
  -- Inside of it, we need subnets to divide up that space.
@@ -308,22 +320,31 @@ Let's take a look at how data makes its way from the front door of Google's netw
        -- But even though the subnets are regional, they're all still globally connected.
        -- Means all Subnets can reach all others globally without any need for VPNs.
  -- Routes (global) define "next hop" for traffic based on destination IP, and apply by Instance-level Tags, not by Subnet.
- -- Firewall Rules (global) further filter data flow that would otherwise route. Default Firewall Rules are restrictive inbound and permissive outbound.<br/>
+ -- Firewall Rules (global) further filter data flow that would otherwise route. Default Firewall Rules are restrictive inbound and permissive outbound.
+ -- By Default, egress is permitted and ingress is not!(so ingress requires a firewall rule with a target and source and a port)
+
 ~~ IPV4 address = is abc.def.ghi.jkl (dotted quad) where each piece is 0-255 (This is derived from the 8 bits available for host addresses (2^8 = 256))
       -- Bits are the smallest unit of data in computing. They only have two possible values - 0 or 1. An IP address is made up of 32 bits divided into four octets (or bytes). Each octet is made up of 8 bits.
       -- The reason why 8 bits correspond to 256 values is due to how binary math works. With 8 bits, you have 2^8 or 256 possible combinations. This is because each bit position can be either a zero or a one, so each bit doubles the number of possible combinations.
       -- Here is how it looks: [2^0 = 1 (binary: 00000001)] + [2^1 = 2 (binary: 00000010)] + [2^2 = 4 (binary: 00000100)] + [2^3 = 8 (binary: 00001000)] + [2^4 = 16 (binary: 00010000)] + [2^5 = 32 (binary: 00100000)] + [2^6 = 64 (binary: 01000000)] + [2^7 = 128 (binary: 10000000)] = If you add all those up (1 + 2 + 4 + 8 + 16 + 32 + 64 + 128), or go straight to 2^8, you get 256.
-      -- So, with 8 bits, the values can range from 0 (all bits are 0) to 255 (all bits are 1), providing 256 total possible values.<br/>
-~~ CIDR block is group of IP addresses (Classless Inter-Domain routing Block, full form not much important for exam I guess)
+      -- So, with 8 bits, the values can range from 0 (all bits are 0) to 255 (all bits are 1), providing 256 total possible values.
+
+~~ CIDR block is group of IP addresses (Classless Inter-Domain routing Block, full form I'm not sure if important for exam but it's cool to remember anyways)
 <img src="./images/IPs and CIDR block.png" width="700">
       -- Each IP range is 8 Bit binary number. 8x4 Totals to 32 bit per IP address in subnet.
       -- IP.IP.IP.IP/32 means Single IP = as all 32 bits are locked.
-      -- IP.IP.IP.0/24 means there are 256 possible IP addresses within the subnet = because last 8 bits are free (represented by the "/24") & can take on 256 different values (0 to 255). 
+      -- IP.IP.IP.0/24 means there are 256 possible IP addresses within the subnet = because last 8 bits are free (represented by the "/24") & can take on 256 different values (0 to 255). 2^8=256 (where 2 represents binary possibility of 0 or 1)
       -- IP.IP.0.0/24 also means there are 256 possible IP but you can break this CIDR block into two subnets, each supporting 128 IP addresses.
       -- However, typically the first address (e.g., IP.IP.IP.0) is reserved as the network address and the last address (e.g., IP.IP.IP.255) is typically reserved as the broadcast address. So, in practical usage, there are typically 254 assignable IP addresses for hosts in a /24 network.
       -- IP.IP.0.0/16 = In the given IP address range, the "/16" refers to the subnet mask, meaning the first 16 bits of the IP address are designated for the network, and the remaining 16 bits are for host addresses. Given this, there are 65,536 possible IP addresses because 2^16 equals 65,536 -minus (first address reserved for the network address, and last for broadcast address) = practically 65,534 assignable IP addresses.
       -- IP.0.0.0/8 means there are a total of 16,777,216 possible IP addresses since 2^24 equals 16,777,216. Practically -minus 2 = 16,777,214.
       -- 0.0.0.0/0 means "any IP address" because no bits are locked.<br/>
+    ⭐ Note: If you create more than one subnet in a VPC, the CIDR blocks of the subnets cannot overlap.
+    -- For example, if you create a VPC with CIDR block 10.0.0.0/24, it supports 256 IP addresses. 
+    -- You can break this CIDR block into two subnets, each supporting 128 IP addresses. 
+    -- One subnet uses CIDR block 10.0.0.0/25 (for addresses 10.0.0.0 - 10.0.0.127) and 
+    -- the other uses CIDR block 10.0.0.128/25 (for addresses 10.0.0.128 - 10.0.0.255).
+
  ~~ Creating VPCs
    -- Activate these firewall rules while creating a Auto-subnet mode VPC
 	   -- my-auto-vpc-allow-icmp (imp allows to ping the machine, trace route and also quite valuable for diagnostics)
@@ -379,15 +400,25 @@ Application code exists in containers and,
 containers run in pods on Kubernetes.
 
 Well the pod is an object on the cluster and it's defined in the API as a resource under the v1 core API group.
+
 we wrap them in a high level object called a deployment.
 This again is an object on the cluster and it's a resource in the apps/v1 API group.
 Now the whole idea of deployment is to make pods cool.
-Well it's not really it's to make them scalable making
-rolling updates and rollback simple and a ton of cool stuff.
+Well it's not really, it's to make them scalable, making
+rolling updates and rollback simple, and a ton of cool stuff.
+= Deployment objects are used to manage stateless applications that can be scaled up or down.
 So kind of cool but really it's about being flexible and more useful.
 So pods and deployments exist in the api and They can be deployed on the cluster as objects.
-Deployments are great for scaling and updates but other objects exist for wrapping your pods 
-so daemon sets make sure that one and only one of a specific pod will run on every worker in the cluster.
+Deployments are great for scaling and updates but other objects exist for wrapping your pods.
+
+
+A DaemonSet is a Kubernetes controller that ensures that all or some nodes in a cluster run a copy of a specific pod. The DaemonSet creates a replica of the pod on each node in the cluster, ensuring that the pod is running on every node.
+So daemon sets make sure that one and only one of a specific pod will run on every worker in the cluster.
+= eg, Deploying the monitoring pod in a DaemonSet ensures that a copy of the pod runs on each node in the cluster, it ensures that metrics are collected from every node in the cluster.
+
+StatefulSet objects are used to manage stateful applications that require unique, persistent identities and stable network identifiers.
+
+Cluster initializers are used to perform additional configuration of a Kubernetes cluster before the objects are created.
 
 kind: Service = loadbalancer
  Spec:
@@ -395,51 +426,98 @@ kind: Service = loadbalancer
  
  Load balancer = a cloud-based load balancer and then integrates that with the service on your cluster.
  
+ It is good practice to use 'Secret object' for storing confidential data like in YAML configuration files like API keys or passwords.
+ ConfigMap object are used for non-confidential data like port numbers.
+
 Cluster IP is the default service and it's the most basic.
 Now that means if you see a manifest file that doesn't actually specify a type you're going to be getting cluster IP.
+
+Node Auto-Repair is a feature that automatically repairs nodes in a GKE cluster if they fail health checks. This can help to ensure that your cluster is always running smoothly and can recover from failures quickly.
+
+Node Auto-Upgrades is a feature that automatically upgrades the nodes in a GKE cluster to the latest available version of Kubernetes.
+
+Container-Optimized OS (COS) is a lightweight operating system designed specifically for running containers. It is optimized for running Kubernetes workloads and includes all the necessary components for running containers, such as Docker and the Kubernetes runtime. COS is a good choice for running containers
 
 </pre>
 
 <h2 align="center">9.Services </h2>
 <pre>
-App Engine Standard is a managed platform-as-a-service (PaaS) offering on GCP, which allows you to deploy and manage applications without worrying about the underlying infrastructure.
+~~ App Engine Standard is a managed platform-as-a-service (PaaS) offering on GCP, which allows you to deploy and manage applications without worrying about the underlying infrastructure.
 
-Compute Engine is an infrastructure-as-a-service (IaaS) offering on GCP that allows you to create and manage virtual machines.
+~~ Compute Engine is an infrastructure-as-a-service (IaaS) offering on GCP that allows you to create and manage virtual machines.
 
-Cloud Storage Object Lifecycle Management is a feature that can be used to automatically move or delete objects in a bucket based on certain conditions such as age, time since last modification, and storage class.
+~~ Cloud Storage Object Lifecycle Management is a feature that can be used to automatically move or delete objects in a bucket based on certain conditions such as age, time since last modification, and storage class.
 
-Google Cloud Deployment Manager is a tool that allows users to specify a "configuration file" of Google Cloud resources in a YAML or JSON file, and then deploy and manage those resources as a single unit. Deployment Manager provides a way to create, update, and delete deployments of resources, as well as to preview and validate deployments before they are executed.
+~~ Google Cloud Deployment Manager is a tool that allows users to specify a "configuration file" of Google Cloud resources in a YAML or JSON file, and then deploy and manage those resources as a single unit. Deployment Manager provides a way to create, update, and delete deployments of resources, as well as to preview and validate deployments before they are executed.
 
-Cloud Dataflow
+~~ App Engine: Each Google Cloud project can contain only a single App Engine application, and once created you cannot change the location of your App Engine application.
+It's possible to have multiple versions of the same application running simultaneously. App Engine provides a feature called Traffic Splitting which allows you to control the amount of traffic sent to each version of the application. Click the "Migrate Traffic" button in the App Engine Versions page in GCP and use "Split traffic" option and move the slider.
 
-Cloud Spanner
+In case of a faulty deployment, the quickest way to revert to a previous version is to route 100% of the traffic to the previous version using the Traffic Splitting feature
 
-Cloud Datastore: provides SQL-database-like ACID transactions on subsets of the data known as entity groups.
+The Activity log contains details about user activities for a specified time range on Google Cloud Platform services such as Cloud Storage, Compute Engine, and BigQuery. By filtering the Activity log, it is possible to view activities for a particular user.
+Stackdriver logs are general-purpose logs and may not provide detailed information about user activities on specific resources like Cloud Storage buckets.
+
+~~ Cloud CDN: improves website performance by caching content in edge locations closer to the user.
+
+~~ Cloud Dataflow
+
+~~ Cloud Spanner: (for scaling up, big transactions, expensive)a homegrown database management system by google
+It's charged based on no of nodes.
+Relational database
+Each Cloud Spanner node can provide up to 10K queries per second (QPS) of reads, or 2,000 QPS of writes (writing single rows at 1 KB of data per row)
+-- What is horizontal scalability?
+=
+Strongly Consistent database design: because every incoming write/update request is side-by-side committed on other instances from different zones as-well, after that only the confirmation is sent back to the user.
+<img src="./images/cloud spanner architecture.png" width="300">
+interleaved tables in cloud spanner
+<img src="./images/cloud spanner interleaved tables 1.png" width="300">
+<img src="./images/cloud spanner interleaved tables 2.png" width="300">
+<img src="./images/cloud spanner interleaved tables 3.png" width="300">
+
+~~ Cloud Datastore: provides SQL-database-like ACID transactions on subsets of the data known as entity groups.
 ・Datastore charges for read/write operations, storage and bandwidth.
 
-Cloud Bigtable: is a NoSQL database,
-・not suitable for analyzing billing data.
+~~ Cloud Bigtable: is a NoSQL database,
+・not suitable for analyzing billing data unlike Bigquery due to unavailability of SQL queries.
 ・charges for 'nodes', storage and bandwidth.
+
+~~ Cloud Firestore: 
+
+~~ Cloud SQL
 
 <img src="./images/storage classes.jpg" width="500">
 Difference b/w Bigtable and Datastore: https://stackoverflow.com/questions/30085326/google-cloud-bigtable-vs-google-cloud-datastore
+⭐ can't update row in Bigtable ( you should write a new row, can't update one). 
+But in Datastore we can update attributes. 
+Datastore is built upon Bigtable.
+Bigtable is in a single zone. 
+Datastore is more expensive because of its versatility and high availability.
+Datastore provides SQL-database-like ACID transactions
+Bigtable is strictly NoSQL.
 
-BigQuery: BigQuery is a powerful, fully managed, cloud-native data warehouse that allows you to store, analyze, and query large datasets quickly and efficiently.
+
+~~ BigQuery: BigQuery is a powerful, fully managed, cloud-native data warehouse that allows you to store, analyze, and query large datasets quickly and efficiently.
 To estimate the cost of a query in BigQuery, run a dry run query in CLI, which provides an estimate of the number of bytes "read" by the actual query. You can then use the BigQuery Pricing Calculator to convert the bytes estimate to dollars.
 $bq query --dry_run 'SELECT * FROM mydataset.mytable' 
 Look for the totalBytesProcessed field in the output, which will provide an estimate of the number of bytes that will be processed by the actual query.
 
 Pricing calculator, go to the following website: https://cloud.google.com/products/calculator.
 
-Google Cloud's Container Registry is a private Docker image registry that allows you to store, manage, and secure Docker images. (So don't use cloud storage)
+~~ Google Cloud's Container Registry is a private Docker image registry that allows you to store, manage, and secure Docker images. (So don't use cloud storage)
 $gcloud auth configure-docker
 $docker push gcr.io/<project_id>/<image_name>:<version_tag> # push the image to Container Registry 
 Create a Deployment YAML file to point to that image. It is used to specify how many instances of the Docker image should be running, what ports should be exposed, and other configuration options. 
 Finally, use the kubectl command to create the deployment. Replace <deployment_file> with the name of the YAML file just created.
 $kubectl apply -f <deployment_file>.yaml
 
+Stackdriver I.e, "Google Cloud operations" Monitoring page can help in monitoring resources that are distributed over different projects in Google Cloud Platform and consolidating reporting under the same Monitoring dashboard.
+https://www.techtarget.com/searchcloudcomputing/definition/Google-Stackdriver
+
 To change Service account of an existing VM:
 Download the JSON private key for the service account, ssh into the VM, and save the JSON under the "~/.gcloud/" directory with a filename like "compute-engine-service-account.json". Then, set the environment variable "GOOGLE_APPLICATION_CREDENTIALS" to the path of this file. This will configure the Google Cloud SDK and other applications running on the VM to use this service account.
+
+IAM Role of Compute Storage Admin includes the necessary permissions to create, delete, and manage snapshots of persistent disks in Compute Engine.
 
 Secure Shell (SSH) connections use port 22 and 
 RDP connections use port 3389
