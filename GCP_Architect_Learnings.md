@@ -154,7 +154,7 @@ We can use INSTANCE GROUPS to manage the scaling of our infrastructure.
 ・We have to manually stop the instances when they are not being used. <br/>
 ・When deleting Un-Managed Instance Group, instances are not automatically deleted and need to be further deleted manually.<br/>
 
-➟ Managed instance Groups are created by using INSTANCE TEMPLATES only.<br/>
+⭐ ➟ Managed instance Groups are created by using INSTANCE TEMPLATES only.<br/>
 ・We have to switch to "[x]Multiple zones" to be able to have a managed instance group.<br/>
 ・It automatically scales and stops the instances as per the requirements and the set specifications. <br/>
 ・Deleting a managed instance group will delete all of its instances because it owns them.<br/>
@@ -321,7 +321,10 @@ Shared VPC lets you map each tier of the web service to different projects so th
        -- Means all Subnets can reach all others globally without any need for VPNs.
  -- Routes (global) define "next hop" for traffic based on destination IP, and apply by Instance-level Tags, not by Subnet.
  -- Firewall Rules (global) further filter data flow that would otherwise route. Default Firewall Rules are restrictive inbound and permissive outbound.
- -- By Default, egress is permitted and ingress is not!(so ingress requires a firewall rule with a target and source and a port)
+ -- ⭐ By Default, egress is permitted and ingress is not!(so ingress requires a firewall rule with a target and source and a port)
+ -- VPC peering: is a networking connection between two VPCs that enables routing using each VPC's private IP addresses as if they were in the same network. VPC peering connections can be created between your own VPCs or with a VPC in another GCP account. 
+ -- VPCs are Global and subnets across different regions can be accessed using private IPS, no Peering/VPN setup required.
+ -- Connecting subnets: Create the new instance in the new subnetwork and use the first instance's private address as the endpoint.
 
 ~~ IPV4 address = is abc.def.ghi.jkl (dotted quad) where each piece is 0-255 (This is derived from the 8 bits available for host addresses (2^8 = 256))
       -- Bits are the smallest unit of data in computing. They only have two possible values - 0 or 1. An IP address is made up of 32 bits divided into four octets (or bytes). Each octet is made up of 8 bits.
@@ -442,21 +445,37 @@ Container-Optimized OS (COS) is a lightweight operating system designed specific
 
 <h2 align="center">9.Services </h2>
 <pre>
-~~ App Engine Standard is a managed platform-as-a-service (PaaS) offering on GCP, which allows you to deploy and manage applications without worrying about the underlying infrastructure.
 
 ~~ Compute Engine is an infrastructure-as-a-service (IaaS) offering on GCP that allows you to create and manage virtual machines.
+
+You have a web application deployed as a managed instance group,
+To ensure that the available capacity does not decrease during the gradual deployment of a new version of your web application, you should: 
+~~ Perform a rolling-action start-update with maxSurge set to 1 and maxUnavailable set to 0.
+    -- MaxSurge: This option controls how many new instances can be created at once. By setting it to 1, you ensure that only one new instance is created at a time, gradually replacing the old instances with the new version.
+    -- MaxUnavailable: This option controls the maximum number of instances that can be unavailable at a time. By setting it to 0, you make sure that there is no instance downtime during the update. So instantly a new vm is up as previous one goes down.
+  -- This approach allows you to roll out the new version of your application gradually while keeping the capacity available and avoiding downtime.
+  -- eg, maxSurge set to 0, means no new instances will be created during the update. maxUnavailable set to 1 allows one instance to be unavailable at a time.
+
+~~ To change Service account of an existing VM:
+Download the JSON private key for the service account, ssh into the VM, and save the JSON under the "~/.gcloud/" directory with a filename like "compute-engine-service-account.json". Then, set the environment variable "GOOGLE_APPLICATION_CREDENTIALS" to the path of this file. This will configure the Google Cloud SDK and other applications running on the VM to use this service account.
+
+~~ IAM Role of Compute Storage Admin includes the necessary permissions to create, delete, and manage snapshots of persistent disks in Compute Engine.
 
 ~~ Cloud Storage Object Lifecycle Management is a feature that can be used to automatically move or delete objects in a bucket based on certain conditions such as age, time since last modification, and storage class.
 
 ~~ Google Cloud Deployment Manager is a tool that allows users to specify a "configuration file" of Google Cloud resources in a YAML or JSON file, and then deploy and manage those resources as a single unit. Deployment Manager provides a way to create, update, and delete deployments of resources, as well as to preview and validate deployments before they are executed.
 
-~~ App Engine: Each Google Cloud project can contain only a single App Engine application, and once created you cannot change the location of your App Engine application.
-It's possible to have multiple versions of the same application running simultaneously. App Engine provides a feature called Traffic Splitting which allows you to control the amount of traffic sent to each version of the application. Click the "Migrate Traffic" button in the App Engine Versions page in GCP and use "Split traffic" option and move the slider.
+~~ App Engine Standard is a managed platform-as-a-service (PaaS) offering on GCP, which allows you to deploy and manage applications without worrying about the underlying infrastructure.
+Each Google Cloud project can contain only a single App Engine application, and once created you cannot change the location of your App Engine application.
+It's possible to have multiple versions of the same application running simultaneously. App Engine provides a feature called Traffic Splitting which allows you to control the amount of traffic sent to each version of the application. Click the "Migrate Traffic" button in the App Engine Versions page in GCP and use "Split traffic" option and move the slider. For CLI, use the "--splits" option and specify the weight% for each app version.
+In case of a faulty deployment, the quickest way to revert to a previous version is to route 100% of the traffic to the previous version using the Traffic Splitting feature.
 
-In case of a faulty deployment, the quickest way to revert to a previous version is to route 100% of the traffic to the previous version using the Traffic Splitting feature
-
-The Activity log contains details about user activities for a specified time range on Google Cloud Platform services such as Cloud Storage, Compute Engine, and BigQuery. By filtering the Activity log, it is possible to view activities for a particular user.
+~~ The Activity log contains details about user activities for a specified time range on Google Cloud Platform services such as Cloud Storage, Compute Engine, and BigQuery. By filtering the Activity log, it is possible to view activities for a particular user.
 Stackdriver logs are general-purpose logs and may not provide detailed information about user activities on specific resources like Cloud Storage buckets.
+
+~~ Cloud VPN: VPN is best when performing data transfer between cloud and on-prem with 3gbps Max. If nothing is happening with on-prem then it is not needed. Cloud VPN requires that addresses be reserved for connection thus you will pay for reserved IP and also the resource being used.
+⭐ VPCs are Global and subnets across different regions can be accessed using private IPS, no Peering/VPN setup required.
+
 
 ~~ Cloud CDN: improves website performance by caching content in edge locations closer to the user.
 
@@ -513,14 +532,13 @@ $kubectl apply -f <deployment_file>.yaml
 
 Stackdriver I.e, "Google Cloud operations" Monitoring page can help in monitoring resources that are distributed over different projects in Google Cloud Platform and consolidating reporting under the same Monitoring dashboard.
 https://www.techtarget.com/searchcloudcomputing/definition/Google-Stackdriver
+Stackdriver Logging is a Google Cloud service that allows you to store, search, analyze, and alert on logs and events from your infrastructure and applications. It provides a central repository for all the logs generated by various services in your project, including GKE.
 
-To change Service account of an existing VM:
-Download the JSON private key for the service account, ssh into the VM, and save the JSON under the "~/.gcloud/" directory with a filename like "compute-engine-service-account.json". Then, set the environment variable "GOOGLE_APPLICATION_CREDENTIALS" to the path of this file. This will configure the Google Cloud SDK and other applications running on the VM to use this service account.
 
-IAM Role of Compute Storage Admin includes the necessary permissions to create, delete, and manage snapshots of persistent disks in Compute Engine.
 
-Secure Shell (SSH) connections use port 22 and 
-RDP connections use port 3389
+
+⭐ Secure Shell (SSH) connections use port 22 and 
+⭐ RDP connections use port 3389
 
 
 
