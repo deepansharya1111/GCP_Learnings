@@ -55,8 +55,10 @@ Used for:
 
 <pre>
 -- gcloud config get-value project
--- gcloud services list--enabled
--- gcloud services list--available | grep compute
+-- gcloud services list --project <PROJECT> [see enabled APIs]
+-- gcloud services list --enabled [also see enabled APIs]
+
+-- gcloud services list --available | grep compute
 -- gcloud compute instances create vm-name
 -- screenshots  
 -- gcloud compute instances list [see existing vms]
@@ -397,6 +399,9 @@ When done with everything regarding work, Disable autoscaling and set "Number of
 <h2 align="center">8. Kubernetes (will refine later)</h2>
 
 <pre>
+
+We can use Deployment Manager to create a Google Kubernetes Engine cluster.
+
 The atomic unit for a virtualisation environment is the VM, while the atomic unit for a Kubernetes environment is the pod, so the smallest thing you can deploy on a Kubernetes cluster is a pod.
 But inside of each pod is one or more containers anyway.
 Application code exists in containers and,
@@ -418,6 +423,10 @@ Deployments are great for scaling and updates but other objects exist for wrappi
 A DaemonSet is a Kubernetes controller that ensures that all or some nodes in a cluster run a copy of a specific pod. The DaemonSet creates a replica of the pod on each node in the cluster, ensuring that the pod is running on every node.
 So daemon sets make sure that one and only one of a specific pod will run on every worker in the cluster.
 = eg, Deploying the monitoring pod in a DaemonSet ensures that a copy of the pod runs on each node in the cluster, it ensures that metrics are collected from every node in the cluster.
+
+A Type Provider is essentially a plugin or extension that lets you define and use custom resource types in your Deployment Manager configurations. These custom resource types can represent anything you want, not limited to Google Cloud services. This allows you to create, update, and delete instances of these custom resource types as part of your deployment.
+Example Use Cases: Type Providers are helpful in scenarios where you need to interact with external systems or resources. For example, if you're managing a Kubernetes cluster using Deployment Manager, you might create a custom Type Provider to represent Kubernetes resources like Deployments, Services, or DaemonSets.
+They can simplify complex resource management and make your Deployment Manager configurations more readable and maintainable.
 
 StatefulSet objects are used to manage stateful applications that require unique, persistent identities and stable network identifiers.
 
@@ -473,9 +482,13 @@ In case of a faulty deployment, the quickest way to revert to a previous version
 ~~ The Activity log contains details about user activities for a specified time range on Google Cloud Platform services such as Cloud Storage, Compute Engine, and BigQuery. By filtering the Activity log, it is possible to view activities for a particular user.
 Stackdriver logs are general-purpose logs and may not provide detailed information about user activities on specific resources like Cloud Storage buckets.
 
+Anytime a question mentions on-prem and Cloud, Google wants you to think about Cloud VPN.
 ~~ Cloud VPN: VPN is best when performing data transfer between cloud and on-prem with 3gbps Max. If nothing is happening with on-prem then it is not needed. Cloud VPN requires that addresses be reserved for connection thus you will pay for reserved IP and also the resource being used.
 ⭐ VPCs are Global and subnets across different regions can be accessed using private IPS, no Peering/VPN setup required.
 
+Using Cloud VPN or Interconnect, create a tunnel to a VPC in Google Cloud. Cloud VPN or Interconnect can be used to establish a secure and reliable connection between the on-premises data centre and Google Cloud.
+~~ Cloud Router is a Google Cloud service that enables dynamic route advertisement and path selection for VPC networks. By creating a custom route advertisement for 199.36.153.4/30 and announcing it to the on-premises network through the tunnel, the on-premises servers can reach the Cloud Storage service using the internal IP address.
+Announce that network to your on-premises network through the tunnel. In your on-premises network, By configuring the DNS server to resolve *.googleapis.com as a CNAME to restricted.googleapis.com, the on-premises servers can reach the Cloud Storage service using the internal IP address without needing internet access.
 
 ~~ Cloud CDN: improves website performance by caching content in edge locations closer to the user.
 
@@ -493,6 +506,8 @@ interleaved tables in cloud spanner
 <img src="./images/cloud spanner interleaved tables 1.png" width="300">
 <img src="./images/cloud spanner interleaved tables 2.png" width="300">
 <img src="./images/cloud spanner interleaved tables 3.png" width="300">
+
+
 
 ~~ Cloud Datastore: provides SQL-database-like ACID transactions on subsets of the data known as entity groups.
 ・Datastore charges for read/write operations, storage and bandwidth.
@@ -530,16 +545,49 @@ Create a Deployment YAML file to point to that image. It is used to specify how 
 Finally, use the kubectl command to create the deployment. Replace <deployment_file> with the name of the YAML file just created.
 $kubectl apply -f <deployment_file>.yaml
 
-Stackdriver I.e, "Google Cloud operations" Monitoring page can help in monitoring resources that are distributed over different projects in Google Cloud Platform and consolidating reporting under the same Monitoring dashboard.
+~~ In Google Cloud Pub/Sub, a "push endpoint" refers to a destination where messages are automatically delivered by the messaging service when they become available. Push endpoints are typically web services or APIs that can receive and process messages in real-time as they arrive.
+- Push endpoints are commonly used in event-driven architectures and real-time data processing scenarios. They allow systems to react to events as they occur, reducing the need for constant polling and making applications more efficient and responsive.
+In the context of Google Cloud Pub/Sub, you can configure a Cloud Pub/Sub subscription to use a push endpoint, and Google Pub/Sub will handle the delivery of messages to that endpoint when new messages are published to the associated topic. This mechanism is especially useful when you want to trigger actions or processes in response to incoming messages without the need for continuous polling.
+
+
+~~ Stackdriver I.e, "Google Cloud operations" Monitoring page can help in monitoring resources that are distributed over different projects in Google Cloud Platform and consolidating reporting under the same Monitoring dashboard.
 https://www.techtarget.com/searchcloudcomputing/definition/Google-Stackdriver
 Stackdriver Logging is a Google Cloud service that allows you to store, search, analyze, and alert on logs and events from your infrastructure and applications. It provides a central repository for all the logs generated by various services in your project, including GKE.
 
+-----
+Q. For analysis purposes, you need to send all the logs from all of your Compute Engine instances to a BigQuery dataset called platform-logs.
+You have already installed the Cloud Logging agent on all the instances.
+What should you do?
+Ans= In Cloud Logging, create a filter to view only Compute Engine logs. 2. Click Create Export. 3. Choose BigQuery as Sink Service, and the platform-logs dataset as Sink Destination.
+
+In the context of exporting logs from Google Cloud Logging (formerly known as Stackdriver Logging) to another service like BigQuery, "sink destination" and "sink service" have specific meanings:
+
+~~ Sink Service: The "sink service" refers to the destination service or platform to which you want to export your logs. In this case, you are exporting logs to BigQuery, so "BigQuery" is the sink service. Google Cloud Logging allows you to export logs to various services, including BigQuery, Cloud Storage, Cloud Pub/Sub, and more.
+~~ Sink Destination: The "sink destination" is the specific location or resource within the sink service where you want to send your logs. For example, when exporting logs to BigQuery, the sink destination is the BigQuery dataset and table where you want the logs to be stored. In your scenario, the sink destination is the "platform-logs" dataset in BigQuery.
+
+-----
+
+~~ Cloud Memorystore is a fully managed in-memory data store service for Redis and Memcached at Google Cloud.
+Memorystore for Redis provides a highly scalable, low-latency data store. It would be cost-effective as it is a managed service and we only pay for the capacity we use. Also, the Redis instance can be configured to store data entirely in-memory, which provides low-latency access to data.
+Efficient option for running a single caching HTTP reverse proxy on GCP.
+
+https://youtu.be/RXXRguaHZs0
+~~ A reverse proxy is a server that acts as an intermediary between clients and servers. It receives requests from clients and forwards them to the appropriate backend servers. Unlike a forward proxy, which sits between clients and the internet to protect user privacy and cache commonly accessed resources, a reverse proxy is positioned between the internet and internal servers to manage and distribute incoming requests.
+One of the key advantages of using a reverse proxy is load balancing. By distributing requests across multiple backend servers, it helps to ensure optimal utilisation of resources and improves performance and scalability. Additionally, a reverse proxy can provide features such as caching, SSL termination, compression, and security enhancements like access control and rate limiting.
 
 
 
 ⭐ Secure Shell (SSH) connections use port 22 and 
 ⭐ RDP connections use port 3389
+By default, Compute Engine VMs do not allow RDP traffic. You need to create a firewall rule to allow RDP traffic to the VM. You can create the rule using the GCP Console or the gcloud command-line tool.
+For example, to create a firewall rule that allows RDP traffic from any IP address to the VM, run the following command:
+$gcloud compute firewall-rules create allow-rdp --allow tcp:3389 --description "Allow RDP traffic" --direction INGRESS --target-tags=rdp
+The command creates a firewall rule named "allow-rdp" that allows TCP traffic on port 3389 and applies to VMs with the tag "rdp."
 
+If you do not have the login credentials for the VM, you can use the gcloud compute reset-windows-password command to reset the password for rdp. The command generates a new password and displays it in the command output. You can then use the new password to log in to the VM.
+For example, to reset the password for a VM named "my-vm" in the "us-central1" zone, run the following command:
+$gcloud compute reset-windows-password my-vm --zone us-central1
+(You can also use your Google Account credentials to log in to the VM. However, it is not recommended to use the default service account for security reasons.)
 
 
 </pre>
