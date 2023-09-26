@@ -102,6 +102,8 @@ Used for:
 <h2 align="center">4. GCP Console - Compute Engine</h2>
 
 <pre>
+[N1 Machine types and all others](https://cloud.google.com/compute/docs/general-purpose-machines#n1_machine_types)
+
 When creating a Compute Instance, <br/>
 ⮕ In the Identity and API access section <br/>
 We have our Service Account selected to give VM access to Google services. <br/>but an interesting and important thing to understand is that even when we've given access to a particular service account <br/>these access scopes restrict what you can do with it. <br/>
@@ -313,7 +315,9 @@ Let's take a look at how data makes its way from the front door of Google's netw
 
 why do we need vpc in google cloud?
 = A Virtual Private Cloud (VPC) is important in Google Cloud for several reasons. Firstly, it provides a secure and isolated environment for your resources. With a VPC, you can create *multiple subnets and control network access using firewall rules, helping to protect your data from unauthorized access. Additionally, a VPC allows for easy scalability and flexibility. You can expand your network by creating new subnets or adding more resources, without affecting other parts of your infrastructure. This enables efficient resource management and cost optimization. Furthermore, having a VPC enables you to establish VPN connections to securely connect your on-premises network to your Google Cloud network. This allows for hybrid cloud scenarios.
-Shared VPC lets you map each tier of the web service to different projects so that they can be managed by different teams while sharing a common VPC network: Resources, such as instances and load balancer components, for each tier are placed in individual service projects managed by different teams.
+~~ Shared VPC: In a scenario where you have multiple projects within a GCP Organization and you need to enable communication between resources in different VPCs or projects, using a Shared VPC is a recommended approach. A Shared VPC allows one project (the host project) to host the VPC network, while other projects (service projects) can attach their resources to this shared network.
+- Shared VPC lets you map each tier of the web service to different projects so that they can be managed by different teams while sharing a common VPC network: Resources, such as instances and load balancer components, for each tier are placed in individual service projects managed by different teams.
+Organization Requirement: To use Shared VPC, both projects must be part of the same GCP Organization. This ensures that they are under centralized management and billing.
 
  -- Virtual Private Cloud = This is your private software-defined networking space in GCP.
  -- Not just resource-to-resource, it also manages the doors to outside & peers. It defines the overall network.
@@ -321,6 +325,9 @@ Shared VPC lets you map each tier of the web service to different projects so th
  -- Subnets are regional = meaning that a single subnet can be used by multiple resources across all of the availability zones in a region.
        -- But even though the subnets are regional, they're all still globally connected.
        -- Means all Subnets can reach all others globally without any need for VPNs.
+       -- After you create a subnet, the primary IPv4 range for the subnet can be expanded but not replaced or shrunk. How to: [expand subnet](https://cloud.google.com/vpc/docs/create-modify-vpc-networks#expand-subnet)
+⭐READ: [Subnet Rules](https://cloud.google.com/vpc/docs/create-modify-vpc-networks#subnet-rules)
+[Valid IPv4 ranges](https://cloud.google.com/vpc/docs/subnets#valid-ranges)
  -- Routes (global) define "next hop" for traffic based on destination IP, and apply by Instance-level Tags, not by Subnet.
  -- Firewall Rules (global) further filter data flow that would otherwise route. Default Firewall Rules are restrictive inbound and permissive outbound.
  -- ⭐ By Default, egress is permitted and ingress is not!(so ingress requires a firewall rule with a target and source and a port)
@@ -409,6 +416,13 @@ containers run in pods on Kubernetes.
 
 Well the pod is an object on the cluster and it's defined in the API as a resource under the v1 core API group.
 
+~~ To see running pods/ 
+/check the status of the deployed pods:
+$kubectl get pods
+or
+$kubectl get pods -l containerName=myContainerName (-l specifies the label selector to filter Pods based on the specified container name.)
+example= kubectl get pods -l app=myapp
+
 we wrap them in a high level object called a deployment.
 This again is an object on the cluster and it's a resource in the apps/v1 API group.
 Now the whole idea of deployment is to make pods cool.
@@ -418,7 +432,6 @@ rolling updates and rollback simple, and a ton of cool stuff.
 So kind of cool but really it's about being flexible and more useful.
 So pods and deployments exist in the api and They can be deployed on the cluster as objects.
 Deployments are great for scaling and updates but other objects exist for wrapping your pods.
-
 
 A DaemonSet is a Kubernetes controller that ensures that all or some nodes in a cluster run a copy of a specific pod. The DaemonSet creates a replica of the pod on each node in the cluster, ensuring that the pod is running on every node.
 So daemon sets make sure that one and only one of a specific pod will run on every worker in the cluster.
@@ -441,14 +454,37 @@ kind: Service = loadbalancer
  It is good practice to use 'Secret object' for storing confidential data like in YAML configuration files like API keys or passwords.
  ConfigMap object are used for non-confidential data like port numbers.
 
-Cluster IP is the default service and it's the most basic.
+~~ Kubernetes Service of type ClusterIP: 
+- Cluster IP is the default service and it's the most basic.
 Now that means if you see a manifest file that doesn't actually specify a type you're going to be getting cluster IP.
+Creating a Kubernetes Service of type ClusterIP is not suitable for exposing your application to the public, as ClusterIP services are only accessible within the cluster.
+
+~~ Kubernetes Service of type NodePort: 
+NodePort allows you to expose your application on a specific port on each node in the cluster. This is a common way to make services accessible within a cluster.
+Eg, You are using Google Kubernetes Engine with autoscaling enabled to host a new application.
+You want to expose this new application to the public, using HTTPS on a public IP address.
+Ans. You can create a Kubernetes Service of type NodePort for your application, and a Kubernetes Ingress to expose this Service via a Cloud Load Balancer.
+
+~~ Kubernetes Ingress: Using a Kubernetes Ingress resource, you can configure external access and routing for your application. This includes defining rules for routing traffic to different services based on hostnames and paths.
+~~ Cloud Load Balancer: When you use an Ingress with GKE, it automatically provisions a Google Cloud Load Balancer. This load balancer can terminate SSL/TLS connections (HTTPS) and distribute incoming traffic to the appropriate backend NodePort Service, ensuring scalability and high availability.
 
 Node Auto-Repair is a feature that automatically repairs nodes in a GKE cluster if they fail health checks. This can help to ensure that your cluster is always running smoothly and can recover from failures quickly.
 
 Node Auto-Upgrades is a feature that automatically upgrades the nodes in a GKE cluster to the latest available version of Kubernetes.
 
 Container-Optimized OS (COS) is a lightweight operating system designed specifically for running containers. It is optimized for running Kubernetes workloads and includes all the necessary components for running containers, such as Docker and the Kubernetes runtime. COS is a good choice for running containers
+
+~~ HAProxy pod refers to a pod running the HAProxy (High Availability Proxy) software in a Kubernetes cluster. HAProxy is a popular open-source load balancer and proxy server that is commonly used to distribute incoming network traffic across multiple backend servers to ensure high availability, reliability, and scalability of applications.
+In the context of Kubernetes, HAProxy can be deployed as a pod, which is the smallest deployable unit in a Kubernetes cluster. A pod can contain one or more containers, and in this case, the HAProxy software runs as a container within the pod.
+Here are some key characteristics and use cases for HAProxy pods in Kubernetes:
+1. **Load Balancing:** HAProxy is often used to balance incoming traffic to multiple instances (pods) of an application to ensure even distribution and prevent overloading of any single instance.
+2. **High Availability:** HAProxy is known for its capabilities in ensuring high availability by continuously monitoring backend servers and rerouting traffic in case of server failures.
+3. **Session Persistence:** It can be configured to support session persistence, ensuring that requests from the same client are routed to the same backend server for stateful applications.
+4. **SSL/TLS Termination:** HAProxy can handle SSL/TLS termination, offloading the SSL/TLS encryption and decryption process from backend servers, which can improve efficiency and performance.
+5. **Ingress Controller:** In some Kubernetes setups, HAProxy can be used as an Ingress controller, managing the routing and load balancing of incoming traffic to services within the cluster.
+6. **Custom Configuration:** HAProxy pods can be customized to meet specific application requirements through configuration files, which are often provided as ConfigMaps or other configuration management mechanisms in Kubernetes.
+Overall, HAProxy pods play a crucial role in enhancing the reliability and scalability of applications running in Kubernetes clusters by efficiently distributing traffic and managing failovers.
+But it is a more complex and manual approach that involves managing the load balancing and SSL termination yourself, which is not as efficient and scalable as using GKE's built-in load balancing and Ingress features.
 
 </pre>
 
@@ -469,6 +505,7 @@ To ensure that the available capacity does not decrease during the gradual deplo
 Download the JSON private key for the service account, ssh into the VM, and save the JSON under the "~/.gcloud/" directory with a filename like "compute-engine-service-account.json". Then, set the environment variable "GOOGLE_APPLICATION_CREDENTIALS" to the path of this file. This will configure the Google Cloud SDK and other applications running on the VM to use this service account.
 
 ~~ IAM Role of Compute Storage Admin includes the necessary permissions to create, delete, and manage snapshots of persistent disks in Compute Engine.
+-IAM roles must be assigned to G Suite email addresses individually when adding gsuite users
 
 ~~ Cloud Storage Object Lifecycle Management is a feature that can be used to automatically move or delete objects in a bucket based on certain conditions such as age, time since last modification, and storage class.
 
@@ -565,6 +602,8 @@ In the context of exporting logs from Google Cloud Logging (formerly known as St
 ~~ Sink Service: The "sink service" refers to the destination service or platform to which you want to export your logs. In this case, you are exporting logs to BigQuery, so "BigQuery" is the sink service. Google Cloud Logging allows you to export logs to various services, including BigQuery, Cloud Storage, Cloud Pub/Sub, and more.
 ~~ Sink Destination: The "sink destination" is the specific location or resource within the sink service where you want to send your logs. For example, when exporting logs to BigQuery, the sink destination is the BigQuery dataset and table where you want the logs to be stored. In your scenario, the sink destination is the "platform-logs" dataset in BigQuery.
 
+When you set up a log export in Google Cloud Logging, you specify both the "sink service" and the "sink destination" to define where your logs should be sent. This configuration ensures that the logs are efficiently and accurately transferred to the desired location for further analysis, storage, or processing.
+
 -----
 
 ~~ Cloud Memorystore is a fully managed in-memory data store service for Redis and Memcached at Google Cloud.
@@ -596,5 +635,7 @@ Commands:
 
 $gcloud iam roles copy
 https://cloud.google.com/sdk/gcloud/reference/iam/roles/copy
+
+$gcloud projects list (to get the project ID)
 
 
