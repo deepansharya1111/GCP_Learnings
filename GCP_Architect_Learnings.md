@@ -134,6 +134,10 @@ After running "gcloud compute ssh" the public key is put in this project metadat
 But when ssh=ing from console, look at the new keys added...<br/>
 They have a new "expireOn:" tag at the end, so Google will automatically remove these keys in a short while. <br/>They last long enough for us to make the connection to the instance <br/>but not long enough for them to become an issue of someone stealing these credentials and using them to mount an attack.
 
+~~ Shielded VM: A shielded VM is a virtual machine that uses a set of security controls to protect the integrity of the virtual machine's boot and runtime components. Shielded VMs are designed to protect against rootkits, bootkits, and kernel exploits. By using Shielded VMs, the VMs are more secure, and it becomes more difficult for an attacker to modify the VM's boot process or kernel code, thereby protecting against accidental downtime.
+~~ Preemptible VM: Preemptible VMs are a cost-effective option for running short-lived and batch jobs that are less critical in nature. Preemptible VMs can be terminated at any time by Google, and the maximum runtime of a preemptible instance is 24 hours.
+~~ Sole-tenant node: A sole-tenant node is a physical Compute Engine server that is dedicated to a single organization, providing greater control over the underlying hardware. By using a sole-tenant node, the application can be hosted on a dedicated server
+
 </pre>
 A preemptible VM instance, short for preemptible virtual machine, is a type of virtual machine that can be interrupted or terminated by the cloud provider at any time, typically after 24 hours of uptime. The main advantage of using preemptible VMs is their significantly lower cost compared to regular VMs.
 
@@ -418,9 +422,9 @@ Well the pod is an object on the cluster and it's defined in the API as a resour
 
 ~~ To see running pods/ 
 /check the status of the deployed pods:
-$kubectl get pods
+⮕ $kubectl get pods
 or
-$kubectl get pods -l containerName=myContainerName (-l specifies the label selector to filter Pods based on the specified container name.)
+⮕ $kubectl get pods -l containerName=myContainerName (-l specifies the label selector to filter Pods based on the specified container name.)
 example= kubectl get pods -l app=myapp
 
 we wrap them in a high level object called a deployment.
@@ -486,6 +490,8 @@ Here are some key characteristics and use cases for HAProxy pods in Kubernetes:
 Overall, HAProxy pods play a crucial role in enhancing the reliability and scalability of applications running in Kubernetes clusters by efficiently distributing traffic and managing failovers.
 But it is a more complex and manual approach that involves managing the load balancing and SSL termination yourself, which is not as efficient and scalable as using GKE's built-in load balancing and Ingress features.
 
+~~ gvisor: Create a GKE node pool with a sandbox type configured to gvisor. Add the parameter runtimeClassName: gvisor to the specification of your customers' Pods. This option provides strong isolation between your customers' Pods by using gvisor, a container sandbox technology developed by Google. When you create a node pool with gvisor enabled, each node in the pool will run a gvisor runtime that isolates the containers running on that node. By adding the runtimeClassName: gvisor parameter to the specification of your customers' Pods, you ensure that each Pod runs in a gvisor sandbox.
+
 </pre>
 
 <h2 align="center">9.Services </h2>
@@ -504,12 +510,34 @@ To ensure that the available capacity does not decrease during the gradual deplo
 ~~ To change Service account of an existing VM:
 Download the JSON private key for the service account, ssh into the VM, and save the JSON under the "~/.gcloud/" directory with a filename like "compute-engine-service-account.json". Then, set the environment variable "GOOGLE_APPLICATION_CREDENTIALS" to the path of this file. This will configure the Google Cloud SDK and other applications running on the VM to use this service account.
 
+You need to manage multiple Google Cloud projects in the fewest steps possible. To configure the Google Cloud SDK command line interface (CLI) so that you can easily manage multiple projects and
+To Switch between / activate the appropriate configuration in the gcloud SDK CLI, run
+⮕ $gcloud config configurations activate NAME
+where NAME is the configuration you want to activate. This command allows you to switch between different configurations associated with your Google Cloud projects.
+You can find the names of your configurations by running
+⮕ $gcloud config configurations list"
+
+
 ~~ IAM Role of Compute Storage Admin includes the necessary permissions to create, delete, and manage snapshots of persistent disks in Compute Engine.
 -IAM roles must be assigned to G Suite email addresses individually when adding gsuite users
+
+~~ Cloud Storage is the correct storage option for unstructured data, and gsutil is a command-line tool for uploading data to Cloud Storage.
 
 ~~ Cloud Storage Object Lifecycle Management is a feature that can be used to automatically move or delete objects in a bucket based on certain conditions such as age, time since last modification, and storage class.
 
 ~~ Google Cloud Deployment Manager is a tool that allows users to specify a "configuration file" of Google Cloud resources in a YAML or JSON file, and then deploy and manage those resources as a single unit. Deployment Manager provides a way to create, update, and delete deployments of resources, as well as to preview and validate deployments before they are executed.
+
+~~ Cloud Identity: is a Google service that provides identity and access management for Google Cloud Platform (GCP) services, as well as other Google services like Gmail and Google Drive.
+
+~~ Active Directory is a popular directory service used by many organizations for managing user identities and access to resources.
+
+~~ Google Cloud Directory Sync: (GCDS) is a free tool provided by Google that allows you to synchronize users, groups, and other directory information from Active Directory to Cloud Identity. With GCDS, you can configure which Active Directory attributes are synchronized to Cloud Identity, including user names, email addresses, and group memberships. You can also control how frequently the synchronization occurs and how conflicts are resolved. By synchronizing user identities from Active Directory to Cloud Identity, you can have a centralized source of truth for identities that can be used to control access to all Google services, including GCP.
+
+~~ A snapshot is a point-in-time copy of a disk that can be used to restore the disk in case of data loss or corruption. By creating a snapshot schedule, you can automate the process of creating snapshots at regular intervals, ensuring that you always have an up-to-date backup of your data.
+To create a snapshot schedule, you can use the Compute Engine Snapshots API, the Google Cloud Console, or the gcloud command-line tool.
+
+~~ Cloud Marketplace:  The Google Cloud Marketplace is a platform that enables users to find, deploy, and manage third-party software applications and services on Google Cloud Platform (GCP). It provides a simple and secure way to discover, procure, and integrate cloud-based applications, such as data analytics, machine learning, and security tools. The marketplace offers a variety of pre-built solutions and customizable application templates, and users can easily manage their deployments and configurations through the platform.  
+Eg. when moving from on-prem to cloud and if multiple development teams use Cassandra environments as backend databases, just ask devs to launch the Cassandra image for their development work, from cloud marketplace.
 
 ~~ App Engine Standard is a managed platform-as-a-service (PaaS) offering on GCP, which allows you to deploy and manage applications without worrying about the underlying infrastructure.
 Each Google Cloud project can contain only a single App Engine application, and once created you cannot change the location of your App Engine application.
@@ -532,22 +560,26 @@ Announce that network to your on-premises network through the tunnel. In your on
 ~~ Cloud Dataflow
 
 ~~ Cloud Spanner: (for scaling up, big transactions, expensive)a homegrown database management system by google
-It's charged based on no of nodes.
-Relational database
-Each Cloud Spanner node can provide up to 10K queries per second (QPS) of reads, or 2,000 QPS of writes (writing single rows at 1 KB of data per row)
--- What is horizontal scalability?
-=
+Cloud Spanner is a fully managed, horizontally scalable relational database service. It automatically scales up or down based on the amount of traffic it receives. By default, Cloud Spanner automatically resizes its nodes every 30 seconds based on CPU utilization. However, you can configure the resizing policy to meet your application's specific needs.
+Eg. You can Create a Cloud Monitoring alerting policy to send an alert to webhook when Cloud Spanner CPU is over or under your threshold. Then Create a Cloud Function that listens to HTTP and resizes Spanner resources accordingly.
+- It's charged based on no of nodes.
+- Relational database
+- Each Cloud Spanner node can provide up to 10K queries per second (QPS) of reads, or 2,000 QPS of writes (writing single rows at 1 KB of data per row)
+	-- What is horizontal scalability?
+	-- Ans="to update later"
 Strongly Consistent database design: because every incoming write/update request is side-by-side committed on other instances from different zones as-well, after that only the confirmation is sent back to the user.
 <img src="./images/cloud spanner architecture.png" width="300">
 interleaved tables in cloud spanner
 <img src="./images/cloud spanner interleaved tables 1.png" width="300">
 <img src="./images/cloud spanner interleaved tables 2.png" width="300">
 <img src="./images/cloud spanner interleaved tables 3.png" width="300">
-
+[Choose a primary key to prevent hotspots](https://cloud.google.com/spanner/docs/schema-design#primary-key-prevent-hotspots). Changing the primary key to avoid monotonically increasing values can indeed help distribute the data more evenly across Cloud Spanner's underlying servers, which can alleviate hotspotting and improve read and write performance. However, it's a decision that should be made carefully, as it can have implications on your application's data model and may require data migration.
 
 
 ~~ Cloud Datastore: provides SQL-database-like ACID transactions on subsets of the data known as entity groups.
 ・Datastore charges for read/write operations, storage and bandwidth.
+Eg. You want to test your application locally on your laptop with Cloud Datastore = Install the cloud-datastore-emulator component using the gcloud components install command.
+~~ Cloud Datastore emulator is a local version of the Google Cloud Datastore service that can be used for testing and development purposes.
 
 ~~ Cloud Bigtable: is a NoSQL database,
 ・not suitable for analyzing billing data unlike Bigquery due to unavailability of SQL queries.
@@ -576,11 +608,13 @@ Look for the totalBytesProcessed field in the output, which will provide an esti
 Pricing calculator, go to the following website: https://cloud.google.com/products/calculator.
 
 ~~ Google Cloud's Container Registry is a private Docker image registry that allows you to store, manage, and secure Docker images. (So don't use cloud storage)
-$gcloud auth configure-docker
-$docker push gcr.io/<project_id>/<image_name>:<version_tag> # push the image to Container Registry 
+⮕ $gcloud auth configure-docker
+⮕ $docker push gcr.io/<project_id>/<image_name>:<version_tag> # push the image to Container Registry 
 Create a Deployment YAML file to point to that image. It is used to specify how many instances of the Docker image should be running, what ports should be exposed, and other configuration options. 
 Finally, use the kubectl command to create the deployment. Replace <deployment_file> with the name of the YAML file just created.
-$kubectl apply -f <deployment_file>.yaml
+⮕ $kubectl apply -f <deployment_file>.yaml
+
+~~ Google Cloud Pub/Sub: 
 
 ~~ In Google Cloud Pub/Sub, a "push endpoint" refers to a destination where messages are automatically delivered by the messaging service when they become available. Push endpoints are typically web services or APIs that can receive and process messages in real-time as they arrive.
 - Push endpoints are commonly used in event-driven architectures and real-time data processing scenarios. They allow systems to react to events as they occur, reducing the need for constant polling and making applications more efficient and responsive.
@@ -620,12 +654,12 @@ One of the key advantages of using a reverse proxy is load balancing. By distrib
 ⭐ RDP connections use port 3389
 By default, Compute Engine VMs do not allow RDP traffic. You need to create a firewall rule to allow RDP traffic to the VM. You can create the rule using the GCP Console or the gcloud command-line tool.
 For example, to create a firewall rule that allows RDP traffic from any IP address to the VM, run the following command:
-$gcloud compute firewall-rules create allow-rdp --allow tcp:3389 --description "Allow RDP traffic" --direction INGRESS --target-tags=rdp
+⮕ $gcloud compute firewall-rules create allow-rdp --allow tcp:3389 --description "Allow RDP traffic" --direction INGRESS --target-tags=rdp
 The command creates a firewall rule named "allow-rdp" that allows TCP traffic on port 3389 and applies to VMs with the tag "rdp."
 
 If you do not have the login credentials for the VM, you can use the gcloud compute reset-windows-password command to reset the password for rdp. The command generates a new password and displays it in the command output. You can then use the new password to log in to the VM.
 For example, to reset the password for a VM named "my-vm" in the "us-central1" zone, run the following command:
-$gcloud compute reset-windows-password my-vm --zone us-central1
+⮕ $gcloud compute reset-windows-password my-vm --zone us-central1
 (You can also use your Google Account credentials to log in to the VM. However, it is not recommended to use the default service account for security reasons.)
 
 
@@ -633,9 +667,9 @@ $gcloud compute reset-windows-password my-vm --zone us-central1
 
 Commands:
 
-$gcloud iam roles copy
+⮕ $gcloud iam roles copy
 https://cloud.google.com/sdk/gcloud/reference/iam/roles/copy
 
-$gcloud projects list (to get the project ID)
+⮕ $gcloud projects list (to get the project ID)
 
 
