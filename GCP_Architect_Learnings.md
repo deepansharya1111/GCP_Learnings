@@ -1,5 +1,5 @@
 
-<h2 align="center"># GCP Architect Learnings <br/> - Storage </h2>
+<h2 align="center"># GCP Associate Cloud Engineer Learnings <br/> - Storage </h2>
 
 <h2 align="center">1. Creating buckets</h2>
 
@@ -235,6 +235,8 @@ Resource (Something you create in GCP)
  ・ Owner: can also control access & billing
 -- Predefined Roles Give granular access to specific GCP resources
  ・ E.g.: roles/bigquery.dataEditor, roles/pubsub.subscriber
+~~ Granting role:
+$gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:479009290105@cloudbuild.gserviceaccount.com(Replace service account) --role=roles/container.developer
 
 ⮕ Roles Overview: https://cloud.google.com/iam/docs/roles-overview <br/>⮕ Complete List of Roles & Permissions: https://cloud.google.com/iam/docs/understanding-roles#basic
 
@@ -412,6 +414,17 @@ When done with everything regarding work, Disable autoscaling and set "Number of
 <pre>
 
 We can use Deployment Manager to create a Google Kubernetes Engine cluster.
+
+~~ Running Status of current Cluster
+$gcloud container clusters list
+~~ See All pods
+$kubectl get namespace
+~~ Status of a pod
+$kubectl get pods -n kube-system
+~~ Delete pod
+$kubectl delete pod --namespace my-namespace my-pod
+~~ Run GKE config file upon manual updation from Console:\
+$kubectl apply -f gke_service_file_name.yaml
 
 The atomic unit for a virtualisation environment is the VM, while the atomic unit for a Kubernetes environment is the pod, so the smallest thing you can deploy on a Kubernetes cluster is a pod.
 But inside of each pod is one or more containers anyway.
